@@ -1,0 +1,997 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Simulation en réanimation</title><script src="config.js"></script><script>window.SIM_MODE="apprenant"</script></head><body>
+
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600&display=swap">
+<style>
+:root{--bg:#edf2f4;--sf:#fff;--ink:#14232d;--mu:#56666f;--ln:#ccd8de;--hr:#177a43;--spo2:#0b6f93;--map:#b8323f;--rr:#8f6600;--warn:#a85f00;--crit:#c0272d;--ac:#0b5f73;--on:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a22;--sf:#14262f;--ink:#e2edf2;--mu:#93a8b3;--ln:#27424f;--hr:#5fd68a;--spo2:#5cc8e8;--map:#f0707a;--rr:#f2c14e;--warn:#f2a640;--crit:#ff6b6b;--ac:#5cc8e8;--on:#06202a}}
+:root[data-theme="dark"]{--bg:#0d1a22;--sf:#14262f;--ink:#e2edf2;--mu:#93a8b3;--ln:#27424f;--hr:#5fd68a;--spo2:#5cc8e8;--map:#f0707a;--rr:#f2c14e;--warn:#f2a640;--crit:#ff6b6b;--ac:#5cc8e8;--on:#06202a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 "Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif}
+header,main,footer{max-width:1200px;margin:auto;padding:0 16px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:8px 24px;padding-top:16px;padding-bottom:8px}
+main{padding-top:8px;padding-bottom:16px}
+footer{padding-bottom:24px;font-size:14px;color:var(--mu)}
+h1{font-size:26px;margin:0}h2{font-size:24px;margin:12px 0 0}h3{font-size:17px;margin:0 0 8px}p{margin:0}.mu{color:var(--mu)}
+#sum{font-size:18px}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.bed{display:block;width:100%;text-align:left;background:var(--sf);color:inherit;border:1px solid var(--ln);border-left:8px solid var(--hr);border-radius:6px;padding:10px 12px;cursor:pointer;font:inherit}
+.bed.l1{border-left-color:var(--warn)}.bed.l2{border-left-color:var(--crit)}
+.top{display:flex;justify-content:space-between}.st{font-size:14px;font-weight:600}
+.l1 .st{color:var(--warn)}.l2 .st{color:var(--crit)}
+.dx{color:var(--mu);font-size:15px;min-height:22px}
+.mini{display:flex;flex-wrap:wrap;gap:4px 12px;margin:6px 0;font-size:15px;font-variant-numeric:tabular-nums}.mini b{font-size:24px;font-weight:600}
+.px{font-size:14px;color:var(--mu)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.dt{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;margin-top:10px}
+@media(max-width:820px){.dt{grid-template-columns:1fr}}
+.pn{background:var(--sf);border:1px solid var(--ln);border-radius:6px;padding:12px;margin-bottom:12px}
+canvas{width:100%;height:110px;display:block;background:var(--bg);border-radius:4px}
+label{display:block;font-size:14px;color:var(--mu);margin-bottom:8px}
+input,select{display:block;width:100%;margin-top:2px;padding:8px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--ln);border-radius:4px}
+ul{list-style:none;padding:0;margin:8px 0}li{margin:4px 0;font-size:15px}
+button.pb{width:100%;padding:10px;font:inherit;font-weight:600;background:var(--ac);color:var(--on);border:0;border-radius:4px;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.ghost,button.sm{background:none;border:1px solid var(--ln);color:var(--ink);padding:6px 12px;border-radius:4px;font:inherit;cursor:pointer}
+button.sm{padding:3px 10px;font-size:14px}
+.ar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--ln)}.ar:first-child{border-top:0}.ak{color:var(--mu)}
+.lv1{color:var(--warn)}.lv2{color:var(--crit)}
+.le{font-size:14px;padding:3px 0}
+.pr{display:grid;grid-template-columns:var(--lw) minmax(0,1fr);gap:0;align-items:center;padding:10px 0;border-top:1px solid var(--ln)}
+.pr svg{width:100%;height:56px;background:var(--bg);border-radius:4px;display:block}
+.ax{display:flex;justify-content:space-between;font-size:13px;color:var(--mu)}
+@media(max-width:600px){.pr{grid-template-columns:1fr}}
+.sv{overflow-x:auto}
+table{border-collapse:collapse;table-layout:fixed;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{padding:3px 3px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--ln)}
+th:first-child{width:var(--lw);padding:7px 8px 7px 0}
+thead th{position:sticky;top:0;background:var(--sf);z-index:1}
+th small{display:block;font-weight:400;color:var(--mu);font-size:11px;line-height:1.1}
+tbody th{font-weight:400}
+td.now{background:var(--bg);font-weight:600}
+td.ab{color:var(--crit);font-weight:600}
+.band{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 14px;padding:3px 10px;background:var(--sf);border:1px solid var(--ln);border-radius:6px}
+.band .mu{font-size:12px}
+.bi{color:var(--c)}.bi b{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}.bi small{color:var(--mu);font-size:11px}.bi .pm{font-size:16px;font-weight:400}
+.bi.al{outline:2px solid var(--crit);outline-offset:3px;border-radius:3px}
+.alb{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:6px 2px;font-size:15px}
+.ch{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--ln);border-radius:4px;padding:2px 8px;background:var(--sf)}
+.np{display:grid;grid-template-columns:2fr 1fr 1fr 1.4fr auto;gap:12px;align-items:end}.np label{margin:0}.np .fl{font-size:15px;padding-bottom:8px}.np .pb{width:auto;padding:10px 18px}
+@media(max-width:820px){.np{grid-template-columns:1fr 1fr}}
+.cs{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:6px 0 10px;padding-top:6px;border-top:1px solid var(--ln)}.cs label{flex:1 1 110px;margin:0}
+h4{font-size:15px;margin:12px 0 0}
+.tb2{align-items:center;gap:4px 18px;padding:2px 12px;margin-top:6px}.tb{display:inline-flex;align-items:center;gap:8px;flex:1 1 220px;color:var(--c)}.tb svg{flex:1;height:34px;min-width:80px}.tb b{font-size:16px;font-variant-numeric:tabular-nums;color:var(--ink)}.tb2 .mu{font-size:13px}
+.ttl{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin:0 0 8px}.ttl h2{margin:0}
+.tl2{font-size:15px;line-height:1.1;min-width:42px}.tl2 small{display:block;font-size:11px;color:var(--mu)}
+.ax2{display:flex;flex-direction:column;justify-content:space-between;height:22px;font-size:10px;line-height:1;color:var(--mu);text-align:right}.ax2 i{font-style:normal}
+.pr>div:first-child{padding-right:10px}
+:root{--lw:170px}
+.k1,.k2,.k3,.k4{font-weight:600}
+.k1{background:#f2d34f;color:#14232d}.k2{background:#f0963a;color:#14232d}.k3{background:#d4343b;color:#fff}.k4{background:#7d0f1a;color:#fff}
+.bi[class*=" k"]{padding:0 8px;border-radius:4px}.bi[class*=" k"] small{color:inherit}
+.mi{padding:0 5px;border-radius:4px}
+td.fu,th.fu{background:var(--bg);color:var(--mu);font-weight:400}
+table.dn{font-size:12px}
+#vit{margin-bottom:4px}
+.leg{margin-top:8px;font-size:14px}.leg span{padding:1px 8px;border-radius:3px;margin:0 2px}
+.svb{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--ln)}
+.il{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:14px;color:var(--mu)}
+.il select,.svb select,.cc input,.cc select{display:inline-block;width:auto;margin:0;padding:3px 6px;font-size:14px}
+.cc{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--ln);border-radius:4px;padding:2px 4px}
+.cc input[type=text]{width:130px}.cc input[type=number]{width:54px}
+.tr3{display:grid;grid-template-columns:var(--lw) minmax(0,1fr);align-items:center;margin:1px 0}
+.tl3{display:flex;align-items:center;gap:8px;padding-right:10px}
+.tn{font-size:13px;line-height:1.1;min-width:40px}.tn small{display:block;font-size:11px;color:var(--mu)}
+.tl3 b{font-size:15px;font-variant-numeric:tabular-nums;padding:0 4px;border-radius:3px}
+.tl3 .ax2{margin-left:auto}
+.tr3 svg{width:100%;height:22px;background:var(--bg);border-radius:2px;display:block}
+.ax3{position:relative;height:18px;font-size:12px;color:var(--mu);font-variant-numeric:tabular-nums}.ax3 span{position:absolute;top:2px;white-space:nowrap}
+.pr.axr{border-top:0;padding:0}
+#tr h3 small{font-weight:400;color:var(--mu);font-size:14px;margin-left:10px}
+@media(max-width:820px){table{min-width:900px}}
+[hidden]{display:none!important}
+.ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.ph h3{margin:0}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.pb2{padding:6px 12px;font:inherit;font-weight:600;background:var(--ac);color:var(--on);border:1px solid var(--ac);border-radius:4px;cursor:pointer}
+.pb2.alt{background:none;color:var(--ink);border-color:var(--ln)}
+.pb2[aria-expanded=true]{box-shadow:inset 0 0 0 2px var(--ink)}
+.fm,.svb{margin:0 0 10px;padding:10px;border:1px solid var(--ln);border-radius:6px;background:transparent}
+.fm h4{margin:0 0 8px}
+.wk{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:0 12px}
+.wk>*{grid-column:1}
+.wk>.ext{grid-column:2;grid-row:3 / span 3;align-self:start;position:sticky;top:8px}
+.ext{display:flex;flex-direction:column;gap:8px}.ext>.mu{font-size:13px}
+.xb{text-align:left;padding:8px 10px;background:var(--sf);color:var(--ink);border:1px solid var(--ln);border-left:4px solid var(--ac);border-radius:4px;font:inherit;line-height:1.2;cursor:pointer}
+.xb small{display:block;color:var(--mu);font-size:13px}
+@media(max-width:820px){.wk{grid-template-columns:minmax(0,1fr)}.wk>.ext{grid-column:1;grid-row:auto;flex-direction:row;flex-wrap:wrap;align-items:center;position:static}}
+dialog{width:calc(100% - 32px);max-width:440px;background:var(--sf);color:var(--ink);border:1px solid var(--ln);border-radius:8px;padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 6px}dialog h3 small{display:block;font-weight:400;color:var(--mu);font-size:14px}
+dialog dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:12px 0}dialog dt{color:var(--mu)}dialog dd{margin:0}
+dialog form{margin-top:12px;text-align:right}
+.wk{display:block}
+:root{--ac2:#5b3f94;--on2:#fff;--tp:#a2521a}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--ac2:#b7a0ef;--on2:#1a1030;--tp:#f0a066}}
+:root[data-theme="dark"]{--ac2:#b7a0ef;--on2:#1a1030;--tp:#f0a066}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;padding:8px;border:1px solid var(--ln);border-radius:6px;background:var(--bg)}
+.sep{flex-basis:100%;height:0;margin:0}
+.pb2.ex{background:var(--ac2);border-color:var(--ac2);color:var(--on2)}
+.pn>h3 small{font-weight:400;color:var(--mu);font-size:14px;margin-left:10px}
+#tr{margin-bottom:10px}
+td.tx{line-height:1.15}table.dn td.tx{font-size:11px}
+td.na{color:var(--mu);font-size:12px}
+.nmg{display:grid;grid-template-columns:minmax(180px,1fr) minmax(0,3fr) auto;gap:12px;align-items:end}.nmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.nmg label,.nmp label{margin:0}.nmg .pb{width:auto;padding:10px 18px}
+@media(max-width:820px){.nmg{grid-template-columns:1fr}}
+.lk{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--ink);text-decoration:underline dotted;cursor:pointer;text-align:left}
+button.pb.auto{width:auto;padding:10px 18px}
+.np2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}.np2 label{margin:0}
+.pn2{font-size:14px;margin:8px 0}
+.res{display:flex;flex-wrap:wrap;gap:6px 22px;margin:10px 0}.res div{font-size:14px;color:var(--mu)}.res b{display:block;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+.sw{position:relative}
+.vl{position:absolute;top:1px;font-size:11px;line-height:1.1;padding:1px 3px;background:var(--sf);color:var(--ink);border:1px solid var(--ln);border-radius:3px;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;transform:translateX(2px)}
+.pr.nd{row-gap:3px}.pr.nd .hd{grid-column:1/-1;padding-bottom:4px}.pr.nd .ln1{font-size:14px;padding-right:10px;line-height:1.1}.pr.nd .ln1 small{color:var(--mu)}.pr.nd svg{height:24px}
+.vseg{position:absolute;top:2px;bottom:2px;overflow:hidden;white-space:nowrap;font-size:12px;line-height:18px;padding:0 4px;background:var(--bg);border:2px solid var(--ac2);border-radius:3px}
+.tot{margin:10px 0 0;font-size:15px}
+.hd small{color:var(--mu);margin:0 6px}
+.pr.clk{cursor:pointer}.pr.clk:hover{background:var(--bg)}
+.mk{position:absolute;bottom:0;transform:translateX(-50%);font-size:10px;line-height:1;color:var(--ink);background:var(--sf);border-radius:2px;padding:0 1px}.mk.st{color:var(--crit);font-size:13px;font-weight:700}
+td[data-k]{cursor:pointer}td[data-k]:hover{outline:2px solid var(--ac);outline-offset:-2px}
+td.ed::after{content:"✎";font-size:9px;vertical-align:super;margin-left:2px}
+td.inp{color:var(--mu);font-size:12px;border:1px dashed var(--ac);text-align:center}
+dialog .fi{display:grid;gap:8px;margin:10px 0}dialog .fi.two{grid-template-columns:1fr 1fr}dialog .ac2{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.fm.fl2,.svb.fl2{position:fixed;z-index:30;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 16px);overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.35);background:var(--sf);margin:0}
+.fcl{display:none;float:right}.fl2 .fcl{display:inline-block}
+td.ce{padding:2px;background:var(--bg)}td.ce input,td.ce select{display:inline-block;width:100%;min-width:34px;margin:0;padding:3px;font:inherit;font-size:14px}
+td.ce .pa input{width:46%}td.ce .pa{white-space:nowrap}
+:root{--okb:#d6efdc}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--okb:#1f4a36}}
+:root[data-theme="dark"]{--okb:#1f4a36}
+.mk.st{font-size:15px;line-height:1}.mk.st svg{display:block;width:10px;height:15px}.qrow{display:flex;gap:4px}.qrow input{flex:1;min-width:0}
+.ks{position:absolute;top:50%;transform:translate(-50%,-50%);color:var(--ac2);font-size:16px;font-weight:700;line-height:1}.ks.fu2{opacity:.45}
+.bal{display:flex;gap:14px;align-items:center;border:2px solid var(--spo2);border-radius:10px;padding:8px 14px;margin-top:10px;background:var(--bg)}.bal svg{flex:none}.bal .bl{font-weight:600}.bal .v{font-size:24px;font-variant-numeric:tabular-nums}.bal .v.pos{color:var(--warn)}.bal .v.neg{color:var(--spo2)}.bal .bd{font-size:13px;color:var(--mu)}
+.pa2 input{display:inline-block;width:47%}.pa2 input+input{margin-left:4%}
+.wv{width:100%;height:84px;display:block;background:#0b141a;border-radius:4px;margin-top:6px}
+.hist{margin-top:10px;font-size:13px;border-top:1px solid var(--ln);padding-top:6px}.hist summary{cursor:pointer;font-weight:600}.hist ul{margin:4px 0}.hist li{font-size:13px;margin:2px 0}.hist small{color:var(--mu)}
+
+:root{--fmt:#8a5a00;--fmb:#fff7e3}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--fmt:#f2c14e;--fmb:#262111}}
+:root[data-theme="dark"]{--fmt:#f2c14e;--fmb:#262111}
+.hdr{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+#fb{margin:6px 0 10px;padding:8px 12px;border:2px dashed var(--fmt);border-radius:6px;background:var(--fmb)}
+.fbh{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}.fbh>b{color:var(--fmt);text-transform:uppercase;letter-spacing:.06em;font-size:14px}.fbh .mu{font-size:13px}.fbt{font-variant-numeric:tabular-nums;font-weight:600}
+.fbl{margin:6px 0 0}.fbl li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:15px}.fbn{font-weight:600}.fbx{font-size:14px;margin-top:6px}
+.nofm .fmo,.nofm #fb{display:none!important}
+.scb{display:inline-block;margin-left:6px;padding:0 6px;border:1px dashed var(--fmt);color:var(--fmt);border-radius:3px;font-size:12px;font-weight:600}
+.utb{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 12px}.utb>p{flex-basis:100%}
+.fmo{display:inline-flex;flex-wrap:wrap;gap:8px}.ttl .fmo{margin-left:auto}
+dialog.wide{max-width:900px;max-height:calc(100vh - 32px);overflow:auto}
+.pfh{display:flex;justify-content:space-between;align-items:start;gap:8px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin:8px 0 12px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 12px;font:inherit;font-weight:600;color:var(--mu);cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ac)}
+.pill{display:inline-block;margin-left:6px;padding:0 7px;border-radius:9px;font-size:12px;font-weight:600;background:var(--bg);color:var(--mu);border:1px solid var(--ln)}.pill.on{background:var(--fmt);color:var(--sf);border-color:var(--fmt)}
+.pfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 12px}.pfg label{margin:0}.pfg .wide2{grid-column:1/-1}
+fieldset{border:1px solid var(--ln);border-radius:6px;margin:0 0 12px;padding:10px 12px;min-width:0}legend{font-weight:600;padding:0 4px}
+.evc{border:1px solid var(--ln);border-left:4px solid var(--fmt);border-radius:4px;padding:8px 10px;margin:0 0 8px;display:grid;gap:6px;justify-items:start}
+.evg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 12px;width:100%}.evg label{margin:0}
+label.ck{display:flex;gap:8px;align-items:center;color:var(--ink);font-size:15px}label.ck input{width:auto;display:inline-block;margin:0}label.ck.big{font-weight:600;font-size:16px}
+.rowb{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 0}
+#pfe li{font-size:14px}
+textarea{display:block;width:100%;margin-top:2px;padding:8px;font:13px/1.3 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--bg);border:1px solid var(--ln);border-radius:4px}
+.pfa{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:8px}
+.hint{font-size:14px;color:var(--mu);margin:0 0 8px}
+.fdr{font-size:13px}
+#toast{position:fixed;z-index:50;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:min(640px,calc(100vw - 32px));padding:10px 14px;background:var(--ink);color:var(--sf);border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.3);font-size:15px}
+body.drag::after{content:"Déposez les fichiers patient ou scénario (.json)";position:fixed;inset:12px;z-index:60;display:grid;place-items:center;border:3px dashed var(--ac);border-radius:10px;background:color-mix(in srgb,var(--sf) 85%,transparent);font-size:22px;font-weight:600;color:var(--ink)}
+.srvi{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;font-size:14px;margin-top:6px}.srvi code{font:13px ui-monospace,Menlo,Consolas,monospace;background:var(--sf);border:1px solid var(--ln);border-radius:3px;padding:0 4px;user-select:all;word-break:break-all}
+.srvi .code b{font:600 22px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.15em;background:var(--sf);border:2px solid var(--ac);border-radius:6px;padding:0 8px;margin-left:4px;color:var(--ink);user-select:all}
+.conn{font-size:14px;font-weight:600;color:var(--crit);margin-top:4px}
+.srv-apprenant #fmb,.srv-apprenant .fmo,.srv-apprenant footer button{display:none!important}
+.lock .ttl>button.ghost:first-child{display:none}
+.lib{margin-top:14px}.lib h3{margin:0}.libl{overflow-x:auto}
+.libt{table-layout:auto;font-size:15px}.libt td,.libt th{padding:6px 8px;white-space:normal}.libt td small{display:block;color:var(--mu);font-size:12px}
+.ty{display:inline-block;padding:0 7px;border-radius:9px;font-size:12px;font-weight:600;border:1px solid var(--ln)}.ty.patient{color:var(--ac);border-color:var(--ac)}.ty.scenario{color:var(--fmt);border-color:var(--fmt)}
+.wait{font-size:18px;padding:24px 0}
+</style>
+<header><div><h1>Simulation en santé, réanimation</h1><p class="mu">Patients fictifs et scénarios programmables pour la formation par simulation. Non destiné à un usage clinique.</p></div><div class="hdr"><div id="sum" role="status"></div><button id="fmb" class="ghost" aria-pressed="true" onclick="tgFM()">Vue formateur : affichée</button></div></header>
+<main id="app"></main>
+<dialog id="cx"></dialog><dialog id="pf" class="wide" aria-label="Patient fictif"></dialog><dialog id="xp" class="wide" aria-label="Fichier"></dialog><input id="fop" type="file" accept=".json,application/json" multiple hidden onchange="fopen(this.files);this.value=''"><div id="toast" role="status" aria-live="polite" hidden></div>
+<footer>Patients, scénarios, seuils d’alerte, plages de dose et contrôles fictifs, à des fins de démonstration uniquement.<br><button class="ghost" onclick="expDB()">Exporter l’historique des modifications (JSON)</button></footer>
+<script>
+let USER='Dr Démo (fictif)';const hh=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')},$=s=>document.querySelector(s),f=(n,d=0)=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}),R=Math.round;
+const DR=[
+{n:"Noradrénaline",u:"µg/kg/min",k:1,m:60,c:160,cu:"µg/mL",lo:.05,hi:1,max:2,s:0,d:.2,pr:"ampoule",q:8000,pv:4,pt:"8 mg / 4 mL",cx:640,rc:[{s:"Vidal (simulé)",n:1,vf:50,t:"1 ampoule qsp 50 mL de glucose 5 % ou de NaCl 0,9 %"},{s:"Recommandation locale (simulée)",n:2,vf:50,t:"2 ampoules qsp 50 mL, voie veineuse centrale"}]},
+{n:"Dobutamine",u:"µg/kg/min",k:1,m:60,c:5000,cu:"µg/mL",lo:2,hi:15,max:20,s:0,d:5,pr:"flacon",q:250000,pv:20,pt:"250 mg / 20 mL",cx:5000,rc:[{s:"Vidal (simulé)",n:1,vf:50,t:"1 flacon qsp 50 mL de glucose 5 % ou de NaCl 0,9 %"},{s:"Recommandation locale (simulée)",n:1,vf:100,t:"1 flacon qsp 100 mL (2 500 µg/mL)"}]},
+{n:"Midazolam",u:"mg/kg/h",k:1,m:1,c:1,cu:"mg/mL",lo:.02,hi:.2,max:.3,s:1,d:.1,pr:"ampoule",q:50,pv:10,pt:"50 mg / 10 mL",cx:5,rc:[{s:"Vidal (simulé)",n:1,vf:50,t:"1 ampoule qsp 50 mL de NaCl 0,9 % ou de glucose 5 %"},{s:"Recommandation locale (simulée)",n:2,vf:50,t:"2 ampoules qsp 50 mL (2 mg/mL)"}]},
+{n:"Propofol",u:"mg/kg/h",k:1,m:1,c:10,cu:"mg/mL",lo:.5,hi:3,max:4,s:1,d:2,pr:"flacon",q:500,pv:50,pt:"500 mg / 50 mL",cx:10,rc:[{s:"Vidal (simulé)",n:1,vf:50,t:"1 flacon pur, sans dilution (10 mg/mL)"},{s:"Recommandation locale (simulée)",n:1,vf:50,t:"1 flacon pur, sans dilution"}]},
+{n:"Fentanyl",u:"µg/kg/h",k:1,m:1,c:10,cu:"µg/mL",lo:.5,hi:3,max:5,s:1,d:1.5,pr:"ampoule",q:500,pv:10,pt:"500 µg / 10 mL",cx:50,rc:[{s:"Vidal (simulé)",n:1,vf:50,t:"1 ampoule qsp 50 mL de NaCl 0,9 %"},{s:"Recommandation locale (simulée)",n:2,vf:50,t:"2 ampoules qsp 50 mL (20 µg/mL)"}]},
+{n:"Insuline rapide",u:"UI/h",k:0,m:1,c:1,cu:"UI/mL",lo:.5,hi:10,max:20,s:0,d:4,pr:"flacon",q:1000,pv:10,pt:"1 000 UI / 10 mL",cx:2,rc:[{s:"Vidal (simulé)",n:.05,vf:50,t:"50 UI (0,5 mL) qsp 50 mL de NaCl 0,9 %"},{s:"Recommandation locale (simulée)",n:.1,vf:50,t:"100 UI (1 mL) qsp 50 mL (2 UI/mL)"}]},
+{n:"Tazocilline",it:1,dil:"NaCl 0,9 %",u:"g",k:0,m:1,c:40,cu:"mg/mL",lo:2,hi:4.5,max:6,dmax:24,s:0,d:4,nb:4,dur:360,t0:360,pr:"flacon",q:4000,pv:0,pt:"pipéracilline 4 g + tazobactam 0,5 g",cx:100,rc:[{s:"Vidal (simulé)",n:1,vf:100,t:"4 g reconstitués puis dilués qsp 100 mL de NaCl 0,9 %"},{s:"Recommandation locale (simulée)",n:1,vf:250,t:"4 g qsp 250 mL, 4 perfusions de 6 h par jour (perfusion continue)"}]},
+{n:"Céfazoline",it:1,u:"g",k:0,m:1,c:20,cu:"mg/mL",lo:.5,hi:2,max:3,dmax:12,s:0,d:2,nb:3,dur:20,t0:360,pr:"flacon",q:1000,pv:0,pt:"1 g",cx:100,rc:[{s:"Vidal (simulé)",n:2,vf:100,t:"2 g qsp 100 mL de NaCl 0,9 % ou de glucose 5 %, en 20 à 30 min"},{s:"Recommandation locale (simulée)",n:2,vf:50,t:"2 g qsp 50 mL en 20 min"}]},
+{n:"Ringer lactate (remplissage)",it:1,nd:1,u:"mL",k:0,m:1,c:1000,cu:"mL/mL",lo:250,hi:1000,max:2000,dmax:4000,s:0,d:500,nb:1,dur:30,t0:360,pr:"poche",q:1000,pv:0,pt:"poche de Ringer lactate, remplissage",cx:1000,rc:[{s:"Remplissage usuel (débit libre)",n:500,vf:500,t:"500 mL en 30 min, débit libre"},{s:"Remplissage lent",n:500,vf:500,t:"500 mL, durée à ajuster"}]},
+{n:"NaCl 0,9 % (remplissage)",it:1,nd:1,u:"mL",k:0,m:1,c:1000,cu:"mL/mL",lo:250,hi:1000,max:2000,dmax:4000,s:0,d:500,nb:1,dur:30,t0:360,pr:"poche",q:1000,pv:0,pt:"poche de sérum salé isotonique, remplissage",cx:1000,rc:[{s:"Remplissage usuel (débit libre)",n:500,vf:500,t:"500 mL en 30 min, débit libre"},{s:"Remplissage lent",n:500,vf:500,t:"500 mL, durée à ajuster"}]},
+{n:"Glucosé 5 %",nd:1,u:"mL/24h",ul:["mL/24h","mL/h"],k:0,m:1,c:50,cu:"mg/mL",lo:100,hi:2000,max:4000,s:0,d:1000,pr:"poche",q:25000,pv:500,pt:"500 mL de glucose à 5 % (25 g)",cx:50,rc:[{s:"Usuel : 500 mL/24 h",n:1,vf:500,x:500,t:"1 poche de 500 mL, perfusée en 24 h"},{s:"Usuel : 1 000 mL/24 h",n:2,vf:1000,x:1000,t:"2 poches (1 000 mL) perfusées en 24 h, quantité modifiable au mL près"}]},
+{n:"Culot globulaire",it:1,nd:1,blood:1,u:"poche",k:0,m:1,c:0,cu:"mL/mL",lo:1,hi:2,max:4,dmax:6,s:0,d:1,nb:1,dur:120,t0:360,pr:"poche",q:1000,pv:0,pt:"poche de culot globulaire (volume variable)",cx:1e9,rc:[{s:"Transfusion usuelle",n:1,vf:0,x:1,t:"1 poche en 2 h, volume renseigné ensuite par l’IDE"}]},
+{n:"Concentré plaquettaire",it:1,nd:1,blood:1,u:"poche",k:0,m:1,c:0,cu:"mL/mL",lo:1,hi:2,max:4,dmax:6,s:0,d:1,nb:1,dur:30,t0:360,pr:"poche",q:1000,pv:0,pt:"poche de concentré plaquettaire (volume variable)",cx:1e9,rc:[{s:"Transfusion usuelle",n:1,vf:0,x:1,t:"1 poche en 30 min, volume renseigné ensuite par l’IDE"}]},
+{n:"Plasma frais congelé (PFC)",it:1,nd:1,blood:1,u:"poche",k:0,m:1,c:0,cu:"mL/mL",lo:1,hi:2,max:4,dmax:6,s:0,d:1,nb:1,dur:60,t0:360,pr:"poche",q:1000,pv:0,pt:"poche de plasma frais congelé (volume variable)",cx:1e9,rc:[{s:"Transfusion usuelle",n:1,vf:0,x:1,t:"1 poche en 1 h, volume renseigné ensuite par l’IDE"}]}];
+const UP=u=>{const q=u.split('/');return{a:q[0],kg:q.includes('kg'),mn:q.includes('min'),d24:q.includes('24h')}};
+const flow=(i,x,c,kg,u)=>{const q=UP(u||DR[i].u);if(q.a=='mL')return q.d24?x/24:x;let a=x*(q.kg?kg:1)*(q.mn?60:1);const dm=DR[i].cu.split('/')[0];if(q.a=='mg'&&dm=='µg')a*=1000;if(q.a=='µg'&&dm=='mg')a/=1000;return a/c};
+const hm2=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const ksess=(r,a,b)=>{const out=[],e=r.e??Infinity,ev=r.ev||[{t:r.s,v:r.v}];ev.forEach((x,k)=>{const lo=Math.max(x.t,r.s),hi=Math.min(k+1<ev.length?ev[k+1].t:Infinity,e);for(let d=new Date(Math.max(lo,a-864e5)).setHours(0,0,0,0);d<=b;d+=864e5)for(let j=0;j<x.v.n;j++){const st=d+(x.v.h+j*x.v.e)*36e5;if(st>=lo-6e4&&st<hi&&st>=a&&st<=b)out.push(st)}});return out};
+const ndvol=(r,k,a,b)=>{const ev=r.ev||[{t:r.s,v:r.v}],e=r.e??Infinity;let s=0;ev.forEach((x,i)=>{const x0=Math.max(x.t,a,r.s),x1=Math.min(i+1<ev.length?ev[i+1].t:Infinity,b,e);if(x1>x0&&x.v[k]!=null)s+=x.v[k]*(x1-x0)/36e5});return s};
+const bilan=p=>{const N=Date.now(),mid=new Date(N).setHours(0,0,0,0),a=N-864e5;let di=0;p.h.di.forEach(v=>di+=v*5/60);
+Object.keys(p.ov).forEach(k=>{if(k.slice(0,3)!='di|')return;const m=+k.slice(3),a2=mid+(m-p.iv)*6e4,b2=mid+m*6e4;let base=0;p.h.di.forEach((v,i)=>{const t=N-(287-i)*3e5;if(t>a2&&t<=b2)base+=v*5/60});di+=p.ov[k].v*p.iv/60-base});
+const all=[...p.nm,...p.nx],drug=[...p.rx,...p.hx].reduce((s,r)=>s+vol(p,r,a,N),0),ent=all.filter(r=>r.k=='ent').reduce((s,r)=>s+ndvol(r,'deb',a,N),0),uf=all.filter(r=>r.k=='crrt').reduce((s,r)=>s+ndvol(r,'uf',a,N),0);
+return{drug,ent,di,uf,in:drug+ent,out:di+uf,net:drug+ent-di-uf}};
+const mki=(d,x,vf,sc)=>{const t=Date.now(),D=DR[d],n=x*(D.xf??1000)/D.q,c=vf>0?x*(D.xf??1000)/vf:0;return{d,x,u:D.u,c,n,vf,fl:vf>0?vf/(sc.dur/60):0,s:t,it:1,nb:sc.nb,dur:sc.dur,t0:sc.t0,ev:[{t,x,vf,n,c,nb:sc.nb,dur:sc.dur,t0:sc.t0,by:USER}]}};
+const adm=(r,a,b)=>{const out=[],e=r.e??Infinity;r.ev.forEach((v,k)=>{const lo=Math.max(v.t,r.s),hi=Math.min(k+1<r.ev.length?r.ev[k+1].t:Infinity,e);for(let d=new Date(Math.max(lo,a-864e5)).setHours(0,0,0,0);d<=b;d+=864e5)for(let j=0;j<v.nb;j++){const st=d+(v.t0+j*1440/v.nb)*6e4,du=v.dur*6e4;if(st>=lo-6e4&&st<hi&&st+du>=a&&st<=b)out.push({s:st,du,x:v.x,vf:v.vf})}});return out};
+const mk=(d,x,kg,c,n,vf,u)=>{const r0=DR[d].rc[0];n=n??r0.n;vf=vf??r0.vf;c=c??n*DR[d].q/vf;const t=Date.now();return{d,x,u:u||DR[d].u,c,n,vf,fl:flow(d,x,c,kg,u),s:t,ev:[{t,x,by:USER}]}};
+const sd=(d,x,kg)=>{const r=mk(d,x,kg),h=3+Math.random()*19,s=r.s-h*36e5,j=()=>.85+Math.random()*.3;r.s=s;r.ev=[{t:s,x:x*.5*j()},{t:s+h*36e5*.35,x:x*.8*j()},{t:s+h*36e5*.7,x:x}];return r};
+const vol=(p,r,a,b)=>{if(r.it)return adm(r,a,b).reduce((s,x)=>s+x.vf*Math.max(0,Math.min(b,x.s+x.du)-Math.max(a,x.s))/x.du,0);const e=r.e??Infinity;let s=0;r.ev.forEach((v,k)=>{const x0=Math.max(v.t,a,r.s),x1=Math.min(k+1<r.ev.length?r.ev[k+1].t:Infinity,b,e);if(x1>x0)s+=flow(r.d,v.x,v.c??r.c,p.kg,r.u||DR[r.d].u)*(x1-x0)/36e5});return s},
+ndAt=(r,t,k)=>{const e=r.ev||[{t:r.s,v:r.v}];let v=e[0].v;e.forEach(x=>{if(x.t<=t)v=x.v});return v[k]};
+const CC=d=>d<2?'map':d<5?'spo2':'rr';
+const LB={hr:'FC',spo2:'SpO₂',map:'PAM',rr:'FR',t:'température'};
+const B=[
+["R. D.",67,82,"Choc septique","VAC, FiO₂ 50 %, PEEP 8",102,95,70,22,38.4,{},[[0,.15],[2,.08],[4,1.5],[5,3]]],
+["M. L.",54,95,"SDRA","VAC protectrice, FiO₂ 70 %, PEEP 12",88,93,78,26,37.6,{},[[3,2],[4,1.5],[0,.08],[5,2]]],
+["A. K.",71,74,"Choc hémorragique","VAC, FiO₂ 40 %, PEEP 5",118,94,60,24,36.4,{map:52,hr:128},[[0,.4],[4,1]]],
+["S. P.",39,68,"Acidocétose diabétique","Ventilation spontanée, O₂ 4 L/min",108,98,82,28,37.2,{},[[5,5],[10,1000]]],
+["J. M.",62,88,"Post-opératoire cardiaque","VS-AI, FiO₂ 35 %, PEEP 5",84,97,76,16,36.9,{},[[1,5],[0,.06],[5,3]]],
+["C. B.",78,70,"Pneumopathie","VNI, FiO₂ 60 %",96,92,74,27,38,{spo2:86},[[0,.1]]],
+["L. T.",45,80,"AVC sévère","VAC, FiO₂ 30 %, PEEP 5",70,98,88,15,37.1,{},[[2,.1],[4,1],[0,.05]]],
+["F. G.",58,90,"Pancréatite aiguë","Ventilation spontanée, O₂ 2 L/min",92,96,80,19,38.7,{},[[4,1.5],[5,4]]],
+["H. N.",50,77,"Arrêt cardiaque récupéré","VAC, FiO₂ 40 %, PEEP 6",74,97,85,14,34,{},[[3,1.5],[4,1],[0,.1],[5,2],[10,500]]],
+["E. V.",66,72,"Décompensation BPCO","VNI, FiO₂ 35 %",100,91,79,24,37.3,{},[[2,.03]]],
+["P. R.",33,85,"Polytraumatisme","VAC, FiO₂ 45 %, PEEP 7",110,95,63,21,37.8,{map:62},[[4,2],[3,1.5],[0,.12]]],
+["N. A.",29,62,"Méningite","Ventilation spontanée, air ambiant",96,99,86,18,38.2,{},[[4,.7],[10,1000]]]];
+const SX=['Homme','Femme','Homme','Femme','Homme','Femme','Homme','Homme','Homme','Femme','Homme','Femme'];
+const P=B.map((b,i)=>{const p={i,sx:SX[i],b:i+1,ini:b[0],a:b[1],kg:b[2],dx:b[3],v:b[4],hr:b[5],spo2:b[6],map:b[7],rr:b[8],t:b[9],ack:{},sig:'',rx:b[11].map(([d,x])=>sd(d,x,b[2])),hx:[],h:{hr:[],map:[],spo2:[],rr:[],t:[],di:[],evn:[]},iv:120,cs:[],nid:1,ov:{}};p.tg={hr:p.hr,spo2:p.spo2,map:p.map,rr:p.rr,t:p.t,...b[10]};return p});
+const NZ={hr:3,spo2:.7,map:3,rr:1.2,t:.05,pp:.8,di:1.5,evn:.15},LM={hr:[25,220],spo2:[50,100],map:[25,160],rr:[4,60],t:[30,43],pp:[10,100],di:[0,2000],evn:[0,10]};
+function alerts(p){const a=[],x=(k,l,m)=>a.push({k,l,m}),s=R(p.spo2),m=R(p.map),h=R(p.hr),r=R(p.rr);
+if(s<85)x('spo2',2,'SpO₂ sous 85 %');else if(s<90)x('spo2',1,'SpO₂ sous 90 %');
+if(m<55)x('map',2,'PAM sous 55 mmHg');else if(m<65)x('map',1,'PAM sous 65 mmHg');
+if(h>140||h<40)x('hr',2,'FC hors de 40 à 140 bpm');else if(h>120||h<50)x('hr',1,'FC hors de 50 à 120 bpm');
+if(r>30||r<8)x('rr',1,'FR hors de 8 à 30 /min');
+if(p.t>38.5)x('t',1,'Température au-dessus de 38,5 °C');
+return a.map(o=>({...o,ack:(p.ack[o.k]||0)>Date.now()}))}
+const lvl=p=>Math.max(0,...alerts(p).filter(a=>!a.ack).map(a=>a.l));
+const L=[];function log(m,b){L.unshift({t:Date.now(),iso:new Date().toISOString(),by:USER,m,b})}window.DB=L;
+function expDB(){const d=$('#xp'),j=JSON.stringify(DB.map(e=>({horodatage:e.iso,utilisateur:e.by,lit:e.b,action:e.m})),null,1);d.innerHTML=`<div class="pfh"><h3>Historique des modifications<small>${DB.length} entrée${DB.length>1?'s':''}, format JSON</small></h3><button class="sm" onclick="xpClose()" aria-label="Fermer">✕</button></div><textarea id="xpo" rows="12" readonly>${esc(j)}</textarea><div class="rowb"><button class="pb2" onclick="xpCopy()">Copier</button></div><p id="xpm" class="pn2" role="status"></p>`;try{d.showModal()}catch(e){d.setAttribute('open','')}}
+let sel=null,op=null,ed=null;
+const pxt=p=>`${p.rx.length} perfusion${p.rx.length>1?'s':''}, ${p.nm.length} traitement${p.nm.length>1?'s':''} non médicamenteux`;
+function grid(){return `<div class="g">${P.map(p=>`<button id="b${p.i}" class="bed" onclick="show(${p.i})"><div class="top"><b>Lit ${p.b}</b><span class="st" id="s${p.i}"></span></div><div>${p.ini}, ${p.sx}, ${p.a} ans</div><div class="dx">${p.dx}${p.sc||p.fx&&p.fx.length?' <span class="scb fmo">Scénario</span>':''}</div><div class="mini" id="m${p.i}"></div><canvas class="wv" id="w${p.i}" width="280" height="84" aria-hidden="true"></canvas><div class="px">${pxt(p)}</div></button>`).join('')}</div>`}
+function gu(){P.forEach(p=>{const l=lvl(p);$('#b'+p.i).className='bed l'+l;$('#s'+p.i).textContent=['Stable','Avertissement','Critique'][l];
+$('#m'+p.i).innerHTML=`<span style="color:var(--hr)">FC <b>${R(p.hr)}</b></span><span style="color:var(--spo2)">SpO₂ <b>${R(p.spo2)}</b></span><span style="color:var(--map)">PA <b>${SY(p.map,p.pp)}/${DY(p.map,p.pp)}</b> (${R(p.map)})</span>`;
+$('#b'+p.i).querySelector('.px').textContent=pxt(p)})}
+function sum(){const c=[0,0,0];P.forEach(p=>c[lvl(p)]++);$('#sum').innerHTML=`<b>${c[2]}</b> critique${c[2]>1?'s':''}, <b>${c[1]}</b> avertissement${c[1]>1?'s':''}, ${c[0]} stable${c[0]>1?'s':''}`}
+function detail(p){return `<div class="ttl"><button class="ghost" onclick="back()">Retour à l’unité</button><h2>Lit ${p.b}, ${p.ini}, <span title="${p.sx}" aria-label="${p.sx}">${p.sx=='Homme'?'♂':'♀'}</span>, ${p.a} ans, ${p.kg} kg</h2><span class="mu">${p.dx}.</span><span class="fmo"><button class="ghost" onclick="pfOpen(${p.i})">Modifier le patient ou le scénario</button><button class="ghost" onclick="savePat(P[${p.i}])">Enregistrer dans un fichier</button><button class="ghost" onclick="rmPat(this)">Retirer le patient</button></span></div>
+<div id="vit" class="band"></div><div id="al" class="alb" aria-live="polite"></div><div id="fb" hidden></div>
+<section class="pn"><h3>Constantes vitales, tendances et surveillance</h3>
+<div id="tr"></div>
+<div class="sv"><table id="svt"></table></div>
+<div class="bar" role="group" aria-label="Prescriptions et appels vers les logiciels"><button id="bm" class="pb2" aria-expanded="false" aria-controls="np" onclick="tg('med',event)">Prescrire un médicament</button><button id="bv" class="pb2" aria-expanded="false" aria-controls="vfm" onclick="tg('vent',event)">Prescrire un mode ventilatoire</button><button id="bn" class="pb2" aria-expanded="false" aria-controls="nmf" onclick="tg('nm',event)">Traitement non médicamenteux (dialyse, ECMO, etc)</button><button id="bs" class="pb2" aria-expanded="false" aria-controls="svp" onclick="tg('sv',event)">Prescrire une surveillance</button><button class="pb2" onclick="ext('lab_rx')" title="Ouvre Cyberlab avec le patient en contexte">Prescrire un examen</button><span class="sep" aria-hidden="true"></span><button class="pb2 ex" onclick="ext('pacs')" title="Ouvrir le PACS avec le patient en contexte">PACS Philips (imagerie)</button><button class="pb2 ex" onclick="ext('lab')" title="Ouvrir Cyberlab avec le patient en contexte">Cyberlab (biologie)</button><button class="pb2 ex" onclick="ext('psl')" title="Ouvrir Cursus avec le patient en contexte">Cursus (produits sanguins)</button><button class="pb2 ex" onclick="ext('hm')" title="Ouvrir Hôpital Manager avec le patient en contexte">Hôpital Manager</button></div>
+<div id="np" class="fm" hidden><button class="sm fcl" onclick="closeEd()" aria-label="Fermer">✕</button><h4 id="nph">Nouvelle prescription médicamenteuse</h4>
+<div class="np2"><label>Médicament<select id="dg" onchange="pick()">${DR.map((d,i)=>`<option value="${i}">${d.n}</option>`).join('')}</select></label>
+<label>Type de prescription<select id="pt2" onchange="ptc()"><option value="p">Protocole du service</option><option value="l">Prescription libre</option></select></label>
+<label>Unité d’administration<select id="un" onchange="unc()"></select></label>
+<label id="lna">Quantité de médicament<span class="qrow"><input id="qa" type="number" step="any" min="0" oninput="qs()"><select id="qu" onchange="quc()"></select></span></label>
+<label id="lvd"><span id="lvdt">Volume de solution de dilution (mL)</span><input id="vd" type="number" step="any" min="0" oninput="qs()"></label>
+<label id="ldn">Nature de la solution de dilution<select id="dn"><option>NaCl 0,9 %</option><option>Glucosé 5 %</option><option>Eau PPI</option></select></label>
+<input id="na" type="hidden"><input id="vf" type="hidden">
+<label><span id="dl">Dose</span> (<span id="du"></span>)<input id="ds" type="number" step="any" min="0" oninput="upd()"></label>
+<label id="lnb">Administrations par jour<input id="inb" type="number" min="1" step="1" oninput="upd()"></label><label id="ldu">Durée d’une perfusion (min)<input id="idur" type="number" min="1" step="any" oninput="upd()"></label><label id="lh">Heure de la 1re perfusion<input id="ih" type="time" oninput="upd()"></label></div>
+<p id="pn" class="mu pn2"></p><div id="res" class="res"></div>
+<div class="mu">Poids du patient : ${p.kg} kg</div>
+<button id="ok" class="pb auto" onclick="valid()">Valider la prescription</button> <button id="stp" class="pb2 alt" hidden onclick="stopEd()">Arrêter ce traitement</button>
+<ul id="chk"></ul><details class="hist" id="hx1" hidden open></details></div>
+<div id="nmf" class="fm" hidden><button class="sm fcl" onclick="closeEd()" aria-label="Fermer">✕</button><h4 id="nmh">Nouveau traitement non médicamenteux</h4>
+<div class="nmg"><label>Traitement<select id="nk" onchange="nmk()">${Object.keys(NT).map(k=>`<option value="${k}">${NT[k].n}</option>`).join('')}</select></label>
+<div id="nmp" class="nmp"></div>
+<button id="nok" class="pb" onclick="nmvalid()">Valider la prescription</button><button id="nstp" class="pb2 alt" hidden onclick="stopEd()">Arrêter ce traitement</button></div>
+<ul id="nchk"></ul><details class="hist" id="hx2" hidden open></details></div>
+<div id="vfm" class="fm" hidden><button class="sm fcl" onclick="closeEd()" aria-label="Fermer">✕</button><h4 id="vh">Prescrire un mode ventilatoire</h4>
+<div class="np2"><label>Support respiratoire (obligatoire)<select id="vs" onchange="vu()"><option value="">Choisir…</option><option value="air">Air ambiant</option><option value="o2">Oxygène (lunettes, masque)</option><option value="hd">Oxygène à haut débit (Optiflow)</option><option value="vm">Ventilation mécanique</option></select></label>
+<label id="lfl">Débit (L/min)<input id="vfl" type="number" step="any" min="0" oninput="vu()"></label>
+<label id="lty">Ventilation invasive ou non (obligatoire)<select id="vty" onchange="vtyp()"><option value="">Choisir…</option><option value="i">Ventilation mécanique invasive</option><option value="n">Ventilation non invasive (VNI)</option></select></label>
+<label id="lmd">Mode ventilatoire (obligatoire)<select id="vmd" onchange="vu()"></select></label>
+<label id="lfi">FiO₂ (%)<input id="vfi" type="number" step="any" min="0" oninput="vu()"></label>
+<label id="lso">Objectif de SpO₂ (obligatoire)<select id="vso" onchange="vu()"><option value="">Choisir…</option><option value="1">&gt; 94 %</option><option value="2">88–90 %</option><option value="l">Saisie libre</option></select></label>
+<label id="lsl">SpO₂ cible, minimum et maximum (%)<span class="pa2"><input id="vs1" type="number" min="50" max="100" oninput="vu()" aria-label="Minimum"><input id="vs2" type="number" min="50" max="100" oninput="vu()" aria-label="Maximum"></span></label></div>
+<p class="mu pn2">Volume courant, PEP, FiO₂ et Pplateau ne sont pas prescrits : ce sont des relevés du respirateur (valeurs simulées), affichés dans les surveillances. La Pplateau n’est affichée qu’en ventilation invasive en mode VAC.</p>
+<button id="vok" class="pb auto" onclick="vvalid()">Valider le mode ventilatoire</button>
+<ul id="vchk"></ul><details class="hist" id="hx3" hidden open></details></div>
+<div id="svp" class="svb" hidden></div></section>
+<section class="pn"><h3>Prescriptions en cours, sur 24 heures</h3><div id="rx"></div></section>`}
+const vplain=v=>v.m=='O2'?(v.flow?`O₂ ${v.flow} L/min`:'Air ambiant'):v.m=='Optiflow'?`Optiflow ${v.flow} L/min`:(v.ni?'VNI ':'')+v.m,
+vtxt=v=>v.m=='O2'?(v.flow?`O₂<br>${v.flow} L/min`:'Air<br>ambiant'):v.m=='Optiflow'?`Optiflow<br>${v.flow} L/min`:(v.ni?'VNI<br>':'')+v.m,
+vdet=v=>v.m=='O2'?'':v.m=='Optiflow'?`FiO₂ ${v.fio2} %`:`${v.m=='VAC'?`Vt ${v.vt} mL, `:''}PEP ${v.peep}, FiO₂ ${v.fio2} %${v.pp!=null?`, Pplat ${v.pp}`:''}`,
+ventAt=(p,m)=>{const t=new Date().setHours(0,0,0,0)+m*6e4;let v=p.vl[0].v;p.vl.forEach(x=>{if(x.t<=t)v=x.v});return v},
+vnow=p=>ventAt(p,(Date.now()-new Date().setHours(0,0,0,0))/6e4);
+function vit(p){const it=(k,l,v,u)=>`<span class="bi" style="--c:var(--${k=='t'?'tp':k})">${l} <b>${v}</b> <small>${u}</small></span>`,vv=vnow(p);
+$('#vit').innerHTML='<span class="mu">En direct, '+hh(Date.now())+'</span>'+it('hr','FC',R(p.hr),'bpm')+it('map','PA',`${SY(p.map,p.pp)}/${DY(p.map,p.pp)} <span class="pm">(${R(p.map)})</span>`,'mmHg')+it('spo2','SpO₂',R(p.spo2),'%')+it('rr','FR',R(p.rr),'/min')+it('t','T°',f(p.t,1),'°C')+`<span class="bi" style="--c:var(--spo2)">Ventilation <b>${vplain(vv)}</b> <small>${vdet(vv)}</small></span>`}
+const DAY=864e5,fut=(N,mid,H)=>{const x=Math.min(1,(N-mid)/DAY)*720;return `<rect x="${x}" y="0" width="${720-x}" height="${H}" fill="var(--ln)" opacity=".35"/><line x1="${x}" x2="${x}" y1="0" y2="${H}" stroke="var(--mu)" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>`},
+grid4=H=>[1,2,3,4,5].map(i=>`<line x1="${i*120}" x2="${i*120}" y1="0" y2="${H}" stroke="var(--ln)" vector-effect="non-scaling-stroke"/>`).join(''),
+axis=()=>`<div class="ax3">${[0,4,8,12,16,20,24].map((h,i)=>`<span style="left:${h/24*100}%;transform:translateX(${i==0?0:i==6?-100:-50}%)">${String(h).padStart(2,'0')}:00</span>`).join('')}</div>`;
+const sev=(k,x0,p)=>{const x=k=='di'?x0/p.kg:x0;
+if(k=='hr')return x>=150||x<35?4:x>=135||x<40?3:x>120||x<50?2:x>105||x<55?1:0;
+if(k=='map')return x<45?4:x<55?3:x<65?2:x<70||x>=110?1:0;
+if(k=='spo2')return x<80?4:x<85?3:x<90?2:x<94?1:0;
+if(k=='rr')return x>=35||x<6?4:x>=30||x<8?3:x>=26||x<10?2:x>22||x<12?1:0;
+if(k=='t')return x>=40||x<32?4:x>=39||x<34?3:x>=38.5||x<35?2:x>=38||x<36?1:0;
+if(k=='di')return x<.15?4:x<.3?3:x<.5?2:x<.7?1:0;
+if(k=='evn')return x>=9?4:x>=7?3:x>=5?2:x>=4?1:0;
+if(k=='pp')return x>=35?4:x>=32?3:x>30?2:x>27?1:0;
+return 0};
+function trend(p){const N=Date.now(),mid=new Date(N).setHours(0,0,0,0),H=22,r={hr:[40,160,'FC','bpm','hr',55,105],map:[40,120,'PAM','mmHg','map',70,110],spo2:[80,100,'SpO₂','%','spo2',94,100],rr:[5,35,'FR','/min','rr',12,22],t:[34,40,'T°','°C','tp',36,38]};
+$('#tr').innerHTML=Object.keys(r).map(k=>{const [lo,hi,l,u,cv,nl,nh]=r[k],a=p.h[k],pts=[];
+a.forEach((v,i)=>{const t=N-(287-i)*3e5;if(t>=mid)pts.push(`${(t-mid)/DAY*720},${H-Math.min(1,Math.max(0,(v-lo)/(hi-lo)))*H}`)});
+const cur=k=='t'?f(a[287],1):R(a[287]);
+return `<div class="tr3"><div class="tl3" style="color:var(--${cv})"><span class="tn">${l}<small>${u}</small></span><b style="color:var(--ink)">${cur}</b><span class="ax2"><i>${hi}</i><i>${lo}</i></span></div><svg viewBox="0 0 720 ${H}" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="${H-(nh-lo)/(hi-lo)*H}" width="720" height="${(nh-nl)/(hi-lo)*H}" fill="var(--okb)"/>${grid4(H)}${fut(N,mid,H)}<polyline points="${pts.join(' ')}" fill="none" stroke="var(--${cv})" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>`}).join('')+`<div class="tr3"><span></span>${axis()}</div>`}
+function alp(p,force){const a=alerts(p),sg=JSON.stringify(a.map(o=>[o.k,o.l,o.ack]));if(sg===p.sig&&!force)return;p.sig=sg;
+$('#al').innerHTML=a.length?a.map(o=>`<span class="ch${o.ack?' ak':''}"><b class="lv${o.l}">${o.l==2?'Critique':'Avertissement'}</b> ${o.m}${o.ack?' (acquittée)':''}${o.ack?'':` <button class="sm" onclick="ackA(${p.i},'${o.k}')">Acquitter</button>`}</span>`).join(''):'<span class="mu">Aucune alerte en cours.</span>'}
+function ackA(i,k){const p=P[i];p.ack[k]=Date.now()+60000;log(`Alerte acquittée pour 60 s (${LB[k]})`,p.b);alp(p);lgl(p);vit(p);sum()}
+let OID=0;
+function rxl(p){[...p.rx,...p.hx,...p.nm,...p.nx].forEach(r=>{if(r.o==null)r.o=++OID});const N=Date.now(),W=864e5,T0=new Date(N).setHours(0,0,0,0),X=t=>Math.min(1,Math.max(0,(t-T0)/W))*720,
+nf=x=>(+(+x).toFixed(2)).toLocaleString('fr-FR',{maximumFractionDigits:2}),
+STP=(x,tl)=>`<span class="mk st" style="left:${x/7.2}%" title="${tl}"><svg viewBox="0 0 10 15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 1.5v12M1.5 5L5 1.5 8.5 5M1.5 10L5 13.5 8.5 10"/></svg></span>`,
+lane=(ev,val,e,mn,mx,col,H,ex,lab,aria,stp)=>{const Y=v=>H-3-Math.min(1,Math.max(0,(v-mn)/(mx-mn)))*(H-6);let rc='',tp='',lb='',fv=1,lx=-1e9,rw=0;
+ev.forEach((v,k)=>{const y=val(v),a=Math.max(v.t,T0),b=Math.min(k+1<ev.length?ev[k+1].t:e,e);if(y==null||b<a)return;const xa=X(a),xb=X(b);
+rc+=`<rect x="${xa}" y="${Y(y)}" width="${xb-xa}" height="${H-Y(y)}" fill="${col}" fill-opacity=".45"/>`;
+tp+=`<line x1="${xa}" x2="${xb}" y1="${Y(y)}" y2="${Y(y)}" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+const y0=k>0?val(ev[k-1]):null,ch=k>0&&v.t>=T0&&y!==y0;
+if(fv||ch){fv=0;rw=xa-lx<40?1-rw:0;lx=xa;lb+=`<span class="vl" style="left:${xa/7.2}%;top:${rw?(H>30?16:12):1}px" title="${hh(v.t)}, ${v.by||USER}">${ch&&y0!=null?(y>y0?'▲':'▼'):''}${lab(y,v)}</span>`}});
+let mk='';
+if(stp)mk+=STP(X(e),`Arrêt à ${hh(e)}, ${stp}`);
+return `<div class="sw"><svg viewBox="0 0 720 ${H}" preserveAspectRatio="none" role="img" aria-label="${aria}">${ex?ex(Y):''}${grid4(H)}${rc}${tp}${fut(N,T0,H)}</svg>${lb}${mk}</div>`},
+st=(s,e,end)=>end?`Arrêté il y a ${f((N-e)/36e5,0)} h`:`En cours depuis ${f((N-s)/36e5,0)} h`,
+lm=()=>'',
+drow=(r,end,j)=>{if(r.it)return itrow(r,end,j);const d=DR[r.d],e=end?r.e:N,col=`var(--${CC(r.d)})`,ru=r.u||d.u,rt=flow(r.d,1,r.c,p.kg,d.u)/flow(r.d,1,r.c,p.kg,ru);
+return `<div class="pr${end?' ak':' clk'}"${end?'':` onclick="edit('rx',${j},event)" title="Cliquer pour modifier ou arrêter"`}><div><b>${d.n}</b><br>${nf(r.x)} ${ru}, ${f(r.fl,1)} mL/h<br><small>${nf(r.n)} ${d.pr}${r.n>=2?'s':''} qsp ${nf(r.vf)} mL (${nf(r.c)} ${d.cu}, ${f(r.n/r.vf,3)} ${d.pr}/mL)</small><br><small>${st(r.s,e,end)}</small><br>${lm(r.ev)}</div>`+lane(r.ev,v=>v.x,e,0,d.max*rt,col,56,Y=>`<rect x="0" y="${Y(d.hi*rt)}" width="720" height="${Y(d.lo*rt)-Y(d.hi*rt)}" fill="var(--ln)" opacity=".7"/>`,x=>nf(x),`Dose de ${d.n} sur 24 heures`,end?(r.eby||USER):null)+`</div>`},
+itrow=(r,end,j)=>{const d=DR[r.d],e=end?r.e:N,col='var(--rr)',H=56;let rc='',lb='',mk='';
+adm(r,T0,T0+W).forEach(a=>{const xa=X(a.s),xb=X(a.s+a.du);rc+=`<rect x="${xa}" y="8" width="${Math.max(2,xb-xa)}" height="${H-16}" fill="${col}" fill-opacity=".45" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke"/>`;lb+=`<span class="vl" style="left:${xa/7.2}%" title="${hh(a.s)}, ${nf(a.x)} ${d.u} en ${a.du/6e4>=60?nf(a.du/36e5)+' h':a.du/6e4+' min'}">${nf(a.x)} ${d.u}</span>`});
+r.ev.forEach((v,k)=>{if(k==0||v.t<T0||v.t>N)return;const pv=r.ev[k-1],ch=v.x>pv.x?'▲':v.x<pv.x?'▼':'';mk+=`<span class="vl" style="left:${X(v.t)/7.2}%;top:40px" title="${hh(v.t)}, ${v.by||USER}">${ch}${nf(v.x)} ${d.u} ×${v.nb}</span>`});
+if(end)mk+=STP(X(e),`Arrêt à ${hh(e)}, ${r.eby||USER}`);
+const dur=r.dur>=60?nf(r.dur/60)+' h':r.dur+' min';
+return `<div class="pr${end?' ak':' clk'}"${end?'':` onclick="edit('rx',${j},event)" title="Cliquer pour modifier ou arrêter"`}><div><b>${d.n}</b><br>${d.blood?`${nf(r.x)} poche${r.x>=2?'s':''}, ${dur} par poche<br><small>${r.vf>0?`${nf(r.vf)} mL, ${f(r.fl,1)} mL/h`:'<b class="lv1">Volume de la poche à renseigner (IDE) : cliquer</b>'}</small>`:`${nf(r.x)} ${d.u} × ${r.nb} par jour, ${dur} par perfusion<br><small>${nf(r.n)} ${d.pr}${r.n>=2?'s':''} qsp ${nf(r.vf)} mL (${nf(r.c)} mg/mL), ${f(r.fl,1)} mL/h pendant la perfusion, ${nf(r.nb*r.vf)} mL par jour</small>`}<br><small>${st(r.s,e,end)}</small><br>${lm(r.ev)}</div><div class="sw"><svg viewBox="0 0 720 ${H}" preserveAspectRatio="none" role="img" aria-label="Perfusions de ${d.n} sur 24 heures">${grid4(H)}${rc}${fut(N,T0,H)}</svg>${lb}${mk}</div></div>`},
+kin=(r,e,end)=>{let sp=ksess(r,T0,T0+W).map(t=>`<span class="ks${t>N?' fu2':''}" style="left:${X(t)/7.2}%" title="Séance de kinésithérapie, ${hh(t)}">✚</span>`).join('');if(end)sp+=STP(X(e),`Arrêt à ${hh(e)}, ${r.eby||USER}`);return `<div class="ln1">Séances <small>un symbole par séance</small></div><div class="sw" style="height:24px"><svg viewBox="0 0 720 24" preserveAspectRatio="none" aria-hidden="true">${grid4(24)}${fut(N,T0,24)}</svg>${sp}</div>`},
+ndrow=(r,end,j)=>{const d=NT[r.k],e=end?r.e:N,ev=r.ev||[{t:r.s,v:r.v}];
+return `<div class="pr nd${end?' ak':' clk'}"${end?'':` onclick="edit('nm',${j},event)" title="Cliquer pour modifier ou arrêter"`}><div class="hd"><b>${d.n}</b><small>${st(r.s,e,end)}</small>${lm(ev)}</div>`+(r.k=='kine'?kin(r,e,end):d.par.map(q=>`<div class="ln1">${q.l} <small>${q.u}</small></div>`+lane(ev,v=>v.v[q.k],e,q.min||0,q.max,'var(--ac2)',24,null,x=>f(x,q.dd||0),`${q.l} de ${d.n}`,end?(r.eby||USER):null)).join(''))+`</div>`},
+vrow=()=>{const vl=p.vl,k0=Math.max(0,vl.map(x=>x.t<=T0).lastIndexOf(true)),ev=vl.slice(k0).filter(x=>x.t<=N);let seg='',mk='';
+ev.forEach((x,k)=>{const a=Math.max(x.t,T0),b=k+1<ev.length?ev[k+1].t:N;if(b<=a)return;const xa=X(a),xb=X(b);seg+=`<span class="vseg" style="left:${xa/7.2}%;width:${(xb-xa)/7.2}%">${vplain(x.v)}</span>`;if(k>0&&x.t>=T0)mk+=`<span class="mk" style="left:${xa/7.2}%" title="${hh(x.t)}, ${x.by||USER} : ${vplain(ev[k-1].v)} → ${vplain(x.v)}">↔</span>`});
+return `<div class="pr nd clk" onclick="edit('vl',0,event)" title="Cliquer pour modifier le mode ventilatoire"><div class="hd"><b>Ventilation</b><small>${vplain(vnow(p))}${vnow(p).so?' · objectif SpO₂ '+vnow(p).so:''}</small>${lm(vl)}</div><div class="ln1">Mode</div><div class="sw" style="height:24px"><svg viewBox="0 0 720 24" preserveAspectRatio="none" aria-hidden="true">${grid4(24)}${fut(N,T0,24)}</svg>${seg}${mk}</div></div>`};
+const hx=p.hx.filter(r=>r.e>T0),nx=p.nx.filter(r=>r.e>T0),
+fl=p.rx.reduce((s,r)=>s+(r.it?(adm(r,N,N).length?r.fl:0):r.fl),0),vo=[...p.rx,...hx].reduce((s,r)=>s+vol(p,r,T0,N),0),cr=p.nm.find(r=>r.k=='crrt'),
+tot=`<p class="tot"><b>Apports liquidiens des médicaments</b> : ${f(fl,1)} mL/h en cours, ${f(vo,0)} mL depuis minuit.${cr?` <b>UF dialyse</b> : ${f(ndAt(cr,N,'uf')/60,2)} mL/min (${f(ndAt(cr,N,'uf'),0)} mL/h).`:''}</p>`;
+const bl=bilan(p),sg=bl.net>0.5?'+':bl.net<-0.5?'−':'',
+bal=`<div class="bal" role="group" aria-label="Balance hydrique sur 24 heures"><svg viewBox="0 0 24 32" width="30" height="40" aria-hidden="true"><path d="M12 2C12 2 3 14 3 21a9 9 0 0 0 18 0C21 14 12 2 12 2z" fill="var(--spo2)"/><path d="M7.5 20a4.5 4.5 0 0 0 4 4.4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/></svg><div><div class="bl">Balance hydrique, 24 dernières heures</div><div><b class="v ${bl.net>0.5?'pos':'neg'}">${sg}${f(Math.abs(bl.net),0)} mL</b></div><div class="bd">Entrées ${f(bl.in,0)} mL (médicaments ${f(bl.drug,0)}${bl.ent?`, nutrition entérale ${f(bl.ent,0)}`:''}) − sorties ${f(bl.out,0)} mL (diurèse ${f(bl.di,0)}${bl.uf?`, UF ${f(bl.uf,0)}`:''})</div></div></div>`;
+const mg=(a,b)=>[...a.map((r,j)=>[r,0,j]),...b.map(r=>[r,1])].sort((x,y)=>x[0].o-y[0].o);
+$('#rx').innerHTML=vrow()+mg(p.rx,hx).map(([r,e,j])=>drow(r,e,j)).join('')+mg(p.nm,nx).map(([r,e,j])=>ndrow(r,e,j)).join('')+'<div class="pr axr"><span></span>'+axis()+'</div>'+tot+bal}
+function lgl(){}
+const IV=[[60,'1 h'],[120,'2 h'],[240,'4 h'],[360,'6 h']],ivt=m=>m<60?m+' min':m/60+' h',
+PS=[['Drain (volume en mL)','vol','Drain'],['Surveillance pupillaire','pup','Surveillance pupillaire'],['Score de Cushman','score','Score de Cushman'],['Volume personnalisé (mL)','vol','Volume'],['Score personnalisé','score','Score']],
+PU=['3/3 R','2/2 R','4/4 R','4/3 aniso'],
+hs=(a,b)=>{const x=Math.sin(a*12.9898+b*78.233)*43758.5453;return x-Math.floor(x)},
+esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
+ivo=v=>IV.map(([m,t])=>`<option value="${m}"${v==m?' selected':''}>Toutes les ${t}</option>`).join('');
+function svp(p){$('#svp').innerHTML=`<b>Prescription de surveillance</b><label class="il">Constantes<select onchange="setIv(+this.value)">${ivo(p.iv)}</select></label>
+${p.cs.map((c,i)=>`<span class="cc"><input type="text" value="${esc(c.n)}" aria-label="Nom de la surveillance" onchange="setCs(${i},'n',this.value)">${c.k=='score'?`<input type="number" value="${c.lo}" aria-label="Minimum" title="Minimum" onchange="setCs(${i},'lo',+this.value)"><input type="number" value="${c.hi}" aria-label="Maximum" title="Maximum" onchange="setCs(${i},'hi',+this.value)">`:''}<select aria-label="Intervalle" onchange="setCs(${i},'iv',+this.value)">${ivo(c.iv)}</select><button class="sm" aria-label="Retirer ${esc(c.n)}" title="Retirer" onclick="delCs(${i})">×</button></span>`).join('')}
+<label class="il">À la demande<select id="ps">${PS.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join('')}</select></label><button class="sm" onclick="addCs()">Ajouter la surveillance</button>`}
+function setIv(m){const p=P[sel];p.iv=m;log(`Surveillance des constantes : toutes les ${ivt(m)}`,p.b);svt(p,1);lgl(p)}
+function addCs(){const p=P[sel],x=PS[+$('#ps').value];p.cs.push({id:p.nid++,n:x[2],k:x[1],lo:0,hi:10,iv:p.iv});log(`Surveillance ajoutée : ${x[2]}, toutes les ${ivt(p.iv)}`,p.b);svp(p);svt(p,1);lgl(p)}
+function setCs(i,k,v){const p=P[sel],c=p.cs[i];if(k=='n')v=v.trim()||'Surveillance';c[k]=v;log(`Surveillance modifiée : ${c.n}`,p.b);svt(p,1);lgl(p)}
+function delCs(i){const p=P[sel],c=p.cs.splice(i,1)[0];log(`Surveillance retirée : ${c.n}`,p.b);svp(p);svt(p,1);lgl(p)}
+function svt(p){const g=(a,b)=>b?g(b,a%b):a,st=[p.iv,...p.cs.map(c=>c.iv)].reduce(g),N=Date.now(),mid=new Date(N).setHours(0,0,0,0),nw=(N-mid)/6e4,n=1440/st,ms=Array.from({length:n},(_,k)=>k*st),
+due=(m,iv)=>!(m%iv),two=x=>String(x).padStart(2,'0'),cl=(s,o)=>{const a=[s?'k'+s:'',o?'ed':''].filter(Boolean).join(' ');return a?` class="${a}"`:''},cls=s=>cl(s),cur=Math.floor(nw/p.iv)*p.iv,tt=o=>o?` title="Modifié à ${hh(o.t)} par ${o.by}, ancienne valeur : ${esc(o.old)}"`:'',
+H=(c,m)=>p.h[c][Math.max(0,Math.min(287,287-Math.round((N-mid-m*6e4)/3e5)))],
+fm={hr:R,map:(v,m)=>`${SY(v,H('pp',m))}/${DY(v,H('pp',m))}<br>(${R(v)})`,spo2:R,rr:R,t:v=>f(v,1),di:v=>R(v*p.iv/60),evn:R},
+lab={hr:'FC<small>bpm</small>',map:'PA (PAM)<small>mmHg</small>',spo2:'SpO₂<small>%</small>',rr:'FR<small>/min</small>',t:'T°<small>°C</small>',di:`Diurèse<small>mL/${ivt(p.iv)}</small>`,evn:'EVN<small>/10</small>'},
+inv=v=>['VAC','VSAI','BIPAP','APRV'].includes(v.m),na='<td class="na">n.a.</td>',
+RW=(l,iv,fn)=>`<tr><th>${l}</th>`+ms.map(m=>m>nw?'<td class="fu"></td>':due(m,iv)?fn(m):'<td>–</td>').join('')+'</tr>',
+vr=(l,fn)=>RW(l,p.iv,m=>fn(ventAt(p,m),m)),
+vs=cs=>cs.map(c=>RW(lab[c],p.iv,m=>{const o=OV(p,c,m);if(!o&&(c=='di'||c=='evn')&&m==cur)return `<td class="inp" data-k="${c}" data-m="${m}">saisir</td>`;const v=o?o.v:H(c,m);return `<td${cl(sev(c,v,p),o)} data-k="${c}" data-m="${m}"${tt(o)}>${o&&c=='map'?`${o.s}/${o.d}<br>(${R(v)})`:fm[c](v,m)}</td>`})).join(''),
+crr=[...p.nm,...p.nx].filter(r=>r.k=='crrt'&&(r.e==null||r.e>mid));
+let h='<thead><tr><th>Heure</th>'+ms.map(m=>`<th${m>nw?' class="fu"':''}>${two(Math.floor(m/60))}:${two(m%60)}</th>`).join('')+'</tr></thead><tbody>';
+h+=vs(['hr','map','spo2','rr','t']);
+h+=vr('Mode ventilatoire',v=>`<td class="tx">${vtxt(v)}</td>`);
+h+=vr('Volume courant<small>mL</small>',(v,m)=>inv(v)?`<td>${v.m=='VAC'?v.vt:Math.round((v.vt+(hs(p.i+3,m)-.5)*80)/10)*10}</td>`:na);
+h+=vr('PEP<small>cmH₂O</small>',v=>inv(v)?`<td>${v.peep}</td>`:na);
+h+=vr('Pplateau<small>cmH₂O</small>',(v,m)=>{if(v.pp==null)return na;const x=R(v.pp+(hs(p.i+5,m)-.5)*2);return `<td${cls(sev('pp',x,p))}>${x}</td>`});
+h+=vr('FiO₂<small>%</small>',v=>v.fio2!=null?`<td>${v.fio2}</td>`:na);
+h+=vs(['di','evn']);
+if(crr.length){h+=RW(`UF dialyse continue<small>mL/${ivt(p.iv)}</small>`,p.iv,m=>{const t=mid+m*6e4,r=crr.find(r=>t>=r.s&&(r.e==null||t<=r.e));return r?`<td>${R(ndAt(r,t,'uf')*p.iv/60*(.95+hs(p.i+9,m)*.1))}</td>`:'<td>–</td>'});
+h+=RW('UF dialyse continue<small>mL/min</small>',p.iv,m=>{const t=mid+m*6e4,r=crr.find(r=>t>=r.s&&(r.e==null||t<=r.e));return r?`<td>${f(ndAt(r,t,'uf')/60,2)}</td>`:'<td>–</td>'})}
+const dv=[...p.rx,...p.hx.filter(r=>r.e>mid)];
+if(dv.length)h+=RW(`Perfusions<small>mL/${ivt(p.iv)}</small>`,p.iv,m=>{const t=mid+m*6e4;return `<td>${R(dv.reduce((s,r)=>s+vol(p,r,t-p.iv*6e4,t),0))}</td>`});
+h+=p.cs.map(c=>RW(`${esc(c.n)}<small>${c.k=='vol'?'mL/'+ivt(c.iv):c.k=='score'?'score '+c.lo+' à '+c.hi:'mm, R = réactives'}</small>`,c.iv,m=>{const o=OV(p,'c'+c.id,m),x=hs(c.id+p.i*7,m);let v,s=0;if(c.k=='vol')v=R((15+x*60)*c.iv/120);else if(c.k=='score'){const lo=Math.min(c.lo,c.hi),hi=Math.max(c.lo,c.hi);v=lo+Math.floor(x*(hi-lo+1))}else{v=PU[x<.7?0:x<.85?1:x<.95?2:3];s=x>=.95?3:0}if(o){v=o.v;s=c.k=='pup'&&o.v==PU[3]?3:0}return `<td${cl(s,o)} data-k="c${c.id}" data-m="${m}"${tt(o)}>${v}</td>`})).join('');
+const t=$('#svt');t.className=n>12?'dn':'';t.innerHTML=h+'</tbody>';t.onclick=e=>{const td=e.target.closest('td[data-k]');if(td)cell(td.dataset.k,+td.dataset.m)}}
+const UNL=d=>d.it?[d.u]:d.ul?d.ul:d.cu.startsWith('UI')?['UI/h','UI/kg/h','mL/h']:['mg/h','µg/h','mg/min','µg/min','mg/kg/h','µg/kg/h','mg/kg/min','µg/kg/min','mL/h'];
+let pu=null;
+function lab(u0){const d=DR[+$('#dg').value],u=u0||d.u;$('#qu').innerHTML=[['pr',d.pr+'s'],['mg',d.cu.split('/')[0]]].concat(d.pv>0?[['ml','mL']]:[]).map(([v,t])=>`<option value="${v}">${t}</option>`).join('');$('#ldn').hidden=!!d.nd;$('#lvd').hidden=!!d.ul;$('#lvdt').textContent=d.nd?'Volume de la poche (mL)':'Volume de solution de dilution (mL)';['#lnb','#ldu','#lh'].forEach(a=>$(a).hidden=!d.it);$('#lna').hidden=!!d.it;$('#dl').textContent=d.it?'Dose par administration':'Dose';$('#un').innerHTML=UNL(d).map(x=>`<option${x==u?' selected':''}>${x}</option>`).join('');pu=u;$('#du').textContent=u;$('#pn').innerHTML=`Présentation : 1 ${d.pr} = ${d.pt}. Concentration maximale recommandée : ${f(d.cx,2)} ${d.cu}. Unité de référence du protocole : ${d.u}.`;if(d.blood){$('#dl').textContent='Nombre de poches';$('#lnb').hidden=true;$('#lvd').hidden=!(ed&&ed.t=='rx');$('#lvdt').textContent='Volume de la poche (mL), à renseigner par l’IDE'}}
+function ptc(){const d=DR[+$('#dg').value];if($('#pt2').value=='p'&&$('#un').value!=d.u){$('#un').value=d.u;unc()}else upd()}
+function unc(){const i=+$('#dg').value,p=P[sel],n=parseFloat($('#na').value),vf=parseFloat($('#vf').value),x=parseFloat($('#ds').value),u=$('#un').value;
+if(n>0&&vf>0&&x>0){const c=n*DR[i].q/vf,fl=flow(i,x,c,p.kg,pu),k=flow(i,1,c,p.kg,u);if(k>0)$('#ds').value=+(fl/k).toPrecision(3)}
+pu=u;$('#du').textContent=u;upd()}
+const OV=(p,k,m)=>p.ov[k+'|'+m],LBL={hr:'FC (bpm)',map:'Pression artérielle (mmHg)',spo2:'SpO₂ (%)',rr:'FR (/min)',t:'Température (°C)',di:'Diurèse',evn:'EVN (/10)'};
+let cedit=null;
+function cell(k,m){if(cedit&&cedit.k==k&&cedit.m==m)return;const p=P[sel],td=$(`#svt td[data-k="${k}"][data-m="${m}"]`);if(!td)return;
+const o=OV(p,k,m),N=Date.now(),mid=new Date(N).setHours(0,0,0,0),c=k[0]=='c'&&p.cs.find(x=>'c'+x.id==k),std=!c,b=std?p.h[k][Math.max(0,Math.min(287,287-Math.round((N-mid-m*6e4)/3e5)))]:null,curM=Math.floor((N-mid)/6e4/p.iv)*p.iv;let inp,old;
+if(std){if(k=='map'){const bp=p.h.pp[Math.max(0,Math.min(287,287-Math.round((N-mid-m*6e4)/3e5)))],s0=o?o.s:SY(b,bp),d0=o?o.d:DY(b,bp);old=`${s0}/${d0}`;inp=`<span class="pa"><input id="cv" type="number" value="${s0}" aria-label="Systolique">/<input id="cw" type="number" value="${d0}" aria-label="Diastolique"></span>`}
+else{const v0=k=='di'?R((o?o.v:b)*p.iv/60):k=='t'?+(o?o.v:b).toFixed(1):R(o?o.v:b),em=!o&&(k=='di'||k=='evn')&&m==curM;old=em?'':String(v0);inp=`<input id="cv" type="number" step="${k=='t'?.1:1}" value="${em?'':v0}" aria-label="Valeur">`}}
+else if(c.k=='pup'){const v0=o?o.v:PU[0];old=v0;inp=`<select id="cv" aria-label="Pupilles">${PU.map(x=>`<option${x==v0?' selected':''}>${x}</option>`).join('')}</select>`}
+else{const v0=o?o.v:'';old=String(v0);inp=`<input id="cv" type="number" value="${v0}" aria-label="Valeur">`}
+cedit={k,m,old,std,c,o};td.className='ce';td.removeAttribute('title');td.innerHTML=inp;
+td.onkeydown=e=>{if(e.key=='Enter'){e.preventDefault();cellSave()}if(e.key=='Escape'){cedit=null;svt(p)}};
+td.onfocusout=e=>{if(!td.contains(e.relatedTarget))setTimeout(()=>{if(cedit)cellSave(true)},0)};
+$('#cv').focus();if($('#cv').select)$('#cv').select()}
+function cellSave(auto){if(!cedit)return;const p=P[sel],{k,m,old,std,c,o}=cedit,td=$('#svt td.ce'),raw=$('#cv').value,x=parseFloat(raw),r={t:Date.now(),by:USER,old:old||'(vide)'},nm=std?(LBL[k]||k):c.n,two=v=>String(v).padStart(2,'0'),hm=`${two(Math.floor(m/60))}:${two(m%60)}`;let txt;
+const fail=t=>{if(auto){cedit=null;svt(p)}else{td.style.outline='2px solid var(--crit)';td.title=t}};
+if(raw===''){if(o){delete p.ov[k+'|'+m];log(`Correction supprimée : ${nm} à ${hm}`,p.b)}cedit=null;svt(p);return}
+if(std&&k=='map'){const s0=parseFloat(raw),d0=parseFloat($('#cw').value);if(!(s0>=20&&s0<=300&&d0>=10&&d0<=200&&s0>d0))return fail('Tension plausible attendue (systolique supérieure à la diastolique).');r.s=R(s0);r.d=R(d0);r.v=(r.s+2*r.d)/3;txt=`${r.s}/${r.d}`}
+else if(std){const lim={hr:[0,300],spo2:[0,100],rr:[0,80],t:[25,45],di:[0,2000],evn:[0,10]}[k];if(!(x>=lim[0]&&x<=lim[1]))return fail(`Valeur attendue entre ${lim[0]} et ${lim[1]}.`);r.v=k=='di'?x*60/p.iv:x;txt=String(x)}
+else if(c.k=='pup'){r.v=raw;txt=raw}
+else{if(!(x>=0))return fail('Valeur positive attendue.');if(c.k=='score'&&!(x>=Math.min(c.lo,c.hi)&&x<=Math.max(c.lo,c.hi)))return fail(`Score attendu entre ${c.lo} et ${c.hi}.`);r.v=x;txt=String(x)}
+if(txt===old){cedit=null;svt(p);return}
+p.ov[k+'|'+m]=r;log(`Surveillance saisie ou modifiée : ${nm} à ${hm} : ${old||'(vide)'} → ${txt}`,p.b);cedit=null;svt(p)}
+function pick(){lab();const d=DR[+$('#dg').value];$('#pt2').value='p';$('#ds').value=d.d;if(d.it){$('#inb').value=d.nb;$('#idur').value=d.dur;$('#ih').value=hh(Date.now())}rec()}
+function setq(n,vf,it){const d=DR[+$('#dg').value];$('#qu').value='pr';$('#qa').value=it?'':+(+n).toPrecision(6);$('#vd').value=+(it?vf:Math.max(0,vf-n*d.pv)).toPrecision(6);qs0()}
+function qs0(){const d=DR[+$('#dg').value],qa=parseFloat($('#qa').value),u=$('#qu').value,vd=parseFloat($('#vd').value);const n=u=='pr'?qa:u=='mg'?qa/d.q:qa/d.pv;if(!d.it)$('#na').value=n>=0?n:'';$('#vf').value=vd>=0&&(d.it||n>=0)?(d.it?0:n*d.pv)+vd:''}
+function qs(){qs0();upd()}
+function quc(){const d=DR[+$('#dg').value],n=parseFloat($('#na').value),u=$('#qu').value;if(n>=0)$('#qa').value=+(u=='pr'?n:u=='mg'?n*d.q:n*d.pv).toPrecision(6);qs()}
+function rec(){const d=DR[+$('#dg').value],r=d.rc[0];setq(r.n,r.vf,d.it);$('#dn').value=d.dil||'NaCl 0,9 %';if(r.x!=null)$('#ds').value=r.x;upd()}
+function chk(p){const i=+$('#dg').value,d=DR[i],u=$('#un').value||d.u,x=parseFloat($('#ds').value),vf=parseFloat($('#vf').value),E=[],W=[];let n=parseFloat($('#na').value),c=NaN,fl=NaN,eq=NaN,nb=1,dur=0,t0=0;
+if(d.it){n=x>0?x*(d.xf??1000)/d.q:NaN;nb=parseInt($('#inb').value);dur=parseFloat($('#idur').value);const h=$('#ih').value.split(':');t0=h.length==2?(+h[0])*60+(+h[1]):NaN}
+if(!(x>0))E.push('Saisissez une dose supérieure à 0.');
+if(!d.it&&!(n>0))E.push(`Saisissez un nombre de ${d.pr}s supérieur à 0.`);
+if(!(vf>0)&&!d.blood)E.push('Saisissez un volume final supérieur à 0.');
+if(n>0&&vf>0){c=n*d.q/vf;
+if(n*d.pv>vf+1e-9)E.push(`Volume final (${f(vf,0)} mL) inférieur au volume de produit prélevé (${f(n*d.pv,1)} mL).`);
+if(c>d.cx*(1+1e-9))E.push(`Concentration de ${f(c,2)} ${d.cu} au-dessus du maximum recommandé (${f(d.cx,2)} ${d.cu}).`);
+if(!d.rc.some(r=>Math.abs(r.n*d.q/r.vf-c)<=1e-9*c))W.push('Dilution différente du paramétrage par défaut : vérifier avec le protocole du service.')}
+if(d.it){fl=vf/(dur/60);eq=x;
+if(!(nb>=1&&nb<=24))E.push('Nombre d’administrations par jour : 1 à 24.');
+if(!(dur>=5&&dur<=1440))E.push('Durée d’une perfusion : 5 à 1 440 min.');else if(nb>=1&&dur>1440/nb+1e-9)E.push(`Durée de perfusion (${f(dur,0)} min) supérieure à l’intervalle entre deux administrations (${f(1440/nb,0)} min).`);
+if(isNaN(t0))E.push('Indiquez l’heure de la première perfusion.');
+if(x>0&&nb>0&&x*nb>d.dmax)E.push(`Dose quotidienne de ${f(x*nb,1)} ${d.u} au-dessus du maximum de ${f(d.dmax,0)} ${d.u} par jour.`)}
+if(x>0&&(c>0||d.it)){if(!d.it){fl=flow(i,x,c,p.kg,u);eq=fl/flow(i,1,c,p.kg,d.u)}const es=u==d.u?'':` (équivalente à ${f(eq,2)} ${d.u})`;
+if(eq>d.max)E.push(`Dose${es} au-dessus du plafond de ${f(d.max,2)} ${d.u}${d.it?' par administration':''} : validation impossible.`);
+else if(eq>d.hi)W.push(`Dose${es} au-dessus de la plage usuelle (${f(d.lo,2)} à ${f(d.hi,2)} ${d.u}).`);
+else if(eq<d.lo)W.push(`Dose${es} en dessous de la plage usuelle (${f(d.lo,2)} à ${f(d.hi,2)} ${d.u}).`);
+if(!d.it&&!d.ul&&fl>50)W.push(`Débit de ${f(fl,1)} mL/h : vérifier la concentration de la seringue.`)}
+if(!d.blood&&!(ed&&ed.t=='rx')&&p.rx.some(r=>r.d===i))E.push(`${d.n} est déjà en cours : modifiez la prescription en cours ou arrêtez-la avant d’en créer une nouvelle.`);
+if(d.s&&p.rx.some((r,k)=>DR[r.d].s&&!(ed&&ed.t=='rx'&&ed.j==k)))W.push('Association de sédatifs ou d’analgésiques : surveiller la profondeur de sédation.');
+if(d.s&&p.map<65)W.push(`PAM actuelle à ${R(p.map)} mmHg : risque d’hypotension avec ${d.n}.`);
+return{i,x,u,n,vf,c,fl,eq,nb,dur,t0,E,W}}
+function upd(){const p=P[sel],r=chk(p),d=DR[r.i],ok=!isNaN(r.c),fl=!isNaN(r.fl),lk=ed&&ed.t=='rx';
+$('#pt2').disabled=!!lk;$('#un').disabled=!!lk||$('#pt2').value=='p'||!!d.it;
+const L1=d.blood?[['Nombre de poches',f(r.x,0)],['Durée de la transfusion',`${f(r.dur,0)} min`],['Volume de la poche',r.vf>0?`${f(r.vf,0)} mL`:'à renseigner par l’IDE'],['Débit',r.vf>0&&r.dur>0?`${f(r.vf/(r.dur/60),0)} mL/h`:'-']]:d.it?[['Concentration finale',ok?`${f(r.c,1)} ${d.cu}`:'-'],[d.pr[0].toUpperCase()+d.pr.slice(1)+'s par administration',r.n>0?f(r.n,2):'-'],['Volume par perfusion',vf0(r)],['Débit pendant la perfusion',fl?`${f(r.fl,1)} mL/h`:'-'],['Dose par jour',r.x>0&&r.nb>0?`${f(r.x*r.nb,1)} ${d.u}`:'-'],['Volume sur 24 h',r.vf>0&&r.nb>0?`${f(r.vf*r.nb,0)} mL`:'-']]:[['Concentration finale',ok?`${f(r.c,2)} ${d.cu}`:'-'],[`${d.pr}s par mL`,ok?f(r.n/r.vf,3):'-'],['Produit prélevé',r.n>0?`${f(r.n*d.pv,1)} mL`:'-'],['Volume par heure',fl?`${f(r.fl,1)} mL/h`:'-'],['Volume sur 24 h',fl?`${f(r.fl*24,0)} mL`:'-'],[`${d.pr}s sur 24 h`,fl?f(r.fl*24*r.n/r.vf,1):'-']].concat(r.u!=d.u&&fl?[['Équivalent protocole',`${f(r.eq,2)} ${d.u}`]]:[]);
+$('#res').innerHTML=(d.nd&&d.it&&!d.blood?L1.slice(2):L1).map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
+$('#chk').innerHTML=r.E.map(m=>`<li><b class="lv2">Bloquant</b> ${m}</li>`).concat(r.W.map(m=>`<li><b class="lv1">Avertissement</b> ${m}</li>`)).join('')||'<li class="mu">Aucun contrôle en échec.</li>';
+const b=$('#ok');b.disabled=r.E.length>0;b.textContent=lk?'Enregistrer la modification':r.W.length?'Valider malgré les avertissements':'Valider la prescription'}
+const vf0=r=>r.vf>0?`${f(r.vf,0)} mL`:'-';
+function valid(){const p=P[sel],r=chk(p);if(r.E.length)return;const t=Date.now(),d=DR[r.i],
+txt=d.blood?`${d.n} ${f(r.x,0)} poche${r.x>=2?'s':''}, ${f(r.dur,0)} min${r.vf>0?`, ${f(r.vf,0)} mL`:', volume à renseigner (IDE)'}`:d.it?`${d.n} ${f(r.x,2)} ${d.u} × ${r.nb}/j, ${f(r.dur,0)} min par perfusion, ${f(r.vf,0)} mL (${f(r.c,1)} mg/mL)`:`${d.n} ${f(r.x,2)} ${r.u}, ${f(r.n,2)} ${d.pr}${r.n>=2?'s':''} qsp ${f(r.vf,0)} mL${d.nd?'':' de '+$('#dn').value} (${f(r.c,2)} ${d.cu}), ${f(r.fl,1)} mL/h`;
+if(ed&&ed.t=='rx'){const q=p.rx[ed.j];const vv=r.vf>0?r.vf:0,hadv=q.vf>0;q.x=r.x;q.c=d.blood?0:r.c;q.n=r.n;q.vf=vv;q.fl=d.blood?(vv>0&&r.dur>0?vv/(r.dur/60):0):r.fl;q.dn=d.nd?null:$('#dn').value;if(d.blood)q.ev.forEach(v=>v.vf=vv);const ev={t,x:r.x,c:q.c,n:r.n,vf:vv,by:d.blood&&!hadv&&vv>0?'IDE (fictif)':USER};if(d.it){q.nb=r.nb;q.dur=r.dur;q.t0=r.t0;Object.assign(ev,{nb:r.nb,dur:r.dur,t0:r.t0})}q.ev.push(ev);log(`Prescription modifiée : ${txt}`,p.b)}
+else{const q2=d.it?mki(r.i,r.x,r.vf>0?r.vf:0,{nb:r.nb,dur:r.dur,t0:r.t0}):mk(r.i,r.x,p.kg,r.c,r.n,r.vf,r.u);q2.pt=$('#pt2').value;q2.dn=d.nd?null:$('#dn').value;p.rx.push(q2);log(`Prescription validée : ${txt}${r.W.length?' (avertissements acceptés : '+r.W.length+')':''}`,p.b)}
+ed=null;$('#dg').disabled=false;rxl(p);svt(p);lgl(p);op=null;ops()}
+function stop(i,j){const p=P[i],r=p.rx.splice(j,1)[0];r.e=Date.now();r.eby=USER;p.hx.push(r);log(`Perfusion arrêtée : ${DR[r.d].n}`,p.b);rxl(p);svt(p);lgl(p);upd()}
+function stopEd(){const p=P[sel],e=ed;ed=null;if(e.t=='rx'){$('#dg').disabled=false;stop(p.i,e.j)}else{$('#nk').disabled=false;stopN(p.i,e.j)}op=null;ops()}
+let FL=false;function tg(k,ev){ed=null;op=op===k?null:k;FL=false;if(op&&ev){fp={x:ev.clientX,y:ev.clientY};FL=true}if(op)prep(k);ops()}
+function prep(k){['#hx1','#hx2','#hx3'].forEach(a=>$(a).hidden=true);if(k=='med'){$('#dg').disabled=false;$('#nph').textContent='Nouvelle prescription médicamenteuse';pick()}
+if(k=='nm'){$('#nk').disabled=false;$('#nmh').textContent='Nouveau traitement non médicamenteux';nmk()}
+if(k=='vent'){$('#vh').textContent='Prescrire un mode ventilatoire';vfill(null)}}
+let fp={x:40,y:40};
+const nfm=x=>(+(+x).toFixed(2)).toLocaleString('fr-FR',{maximumFractionDigits:2}),
+dtm=t=>new Date(t).setHours(0,0,0,0)==new Date().setHours(0,0,0,0)?hh(t):new Date(t).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+hh(t);
+function hist(id,rows){const e=$(id);e.hidden=false;e.innerHTML='<summary>Historique des modifications</summary><ul>'+rows.slice().reverse().map((x,i,a)=>`<li><small>${dtm(x.t)}, ${esc(x.by||USER)}</small> ${i==a.length-1?'<b>Prescription initiale</b> : ':''}${x.txt}</li>`).join('')+'</ul>'}
+function closeEd(){ed=null;op=null;$('#dg').disabled=false;$('#nk').disabled=false;ops()}
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&(ed||FL))closeEd()});
+document.addEventListener('mousedown',e=>{if((ed||FL)&&!e.target.closest('.fl2')&&!e.target.closest('.pr.clk')&&!e.target.closest('.bar'))closeEd()});
+function edit(t,j,ev){const p=P[sel];ed={t,j};if(ev)fp={x:ev.clientX,y:ev.clientY};
+if(t=='rx'){const r=p.rx[j],d=DR[r.d];op='med';$('#dg').value=r.d;$('#dg').disabled=true;lab(r.u||d.u);$('#pt2').value=r.pt||'p';setq(r.n,r.vf,r.it);$('#dn').value=r.dn||d.dil||'NaCl 0,9 %';$('#ds').value=r.x;if(r.it){$('#inb').value=r.nb;$('#idur').value=r.dur;$('#ih').value=hm2(r.t0)}$('#nph').textContent='Modification de la prescription : '+d.n;upd();hist('#hx1',r.ev.map(v=>({t:v.t,by:v.by,txt:r.it?`${nfm(v.x)} ${d.u} × ${v.nb||r.nb}/j, ${nfm(v.dur||r.dur)} min, ${nfm(v.vf)} mL`:`${nfm(v.x)} ${r.u||d.u}${v.n!=null?`, ${nfm(v.n)} ${d.pr}${v.n>=2?'s':''} qsp ${nfm(v.vf)} mL`:''}`})))}
+else if(t=='nm'){const r=p.nm[j];op='nm';$('#nk').value=r.k;$('#nk').disabled=true;nmk();NT[r.k].par.forEach(q=>$(`#nmp [data-k="${q.k}"]`).value=r.v[q.k]);$('#nmh').textContent='Modification : '+NT[r.k].n;nmu();hist('#hx2',(r.ev||[{t:r.s,v:r.v}]).map(v=>({t:v.t,by:v.by,txt:NT[r.k].par.map(q=>`${q.l} ${f(v.v[q.k],q.dd||0)} ${q.u}`).join(', ')})))}
+else{op='vent';vfill(vnow(p));$('#vh').textContent='Modification du mode ventilatoire';hist('#hx3',p.vl.filter(x=>x.t>0).map(x=>({t:x.t,by:x.by,txt:`${vplain(x.v)}${x.v.so?', objectif SpO₂ '+x.v.so:''}`})))}
+ops()}
+function ops(){if(!$('#np'))return;[['med','#np','#bm'],['nm','#nmf','#bn'],['sv','#svp','#bs'],['vent','#vfm','#bv']].forEach(([k,a,b])=>{$(a).hidden=op!=k;$(b).setAttribute('aria-expanded',op==k)});if(!op)FL=false;['#np','#nmf','#vfm','#svp'].forEach(a=>{const e=$(a);e.classList.remove('fl2');e.style.left=e.style.top=''});
+if((ed||FL)&&{med:'#np',nm:'#nmf',vent:'#vfm',sv:'#svp'}[op]){const e=$({med:'#np',nm:'#nmf',vent:'#vfm',sv:'#svp'}[op]);e.classList.add('fl2');const w=e.offsetWidth,h=e.offsetHeight;e.style.left=Math.max(8,Math.min(fp.x+8,innerWidth-w-12))+'px';e.style.top=Math.max(8,Math.min(fp.y+8,innerHeight-h-12))+'px'}
+$('#stp').hidden=!(ed&&ed.t=='rx');$('#nstp').hidden=!(ed&&ed.t=='nm');if(op=='nm')nmu();if(op=='med')$(ed?'#ds':'#dg').focus();if(op=='nm')$(ed?'#nmp input':'#nk').focus();if(op=='vent')$(ed?'#vfl':'#vs').focus()}
+const VMI=['VAC','VSAI','BIPAP','APRV'],VMN=['VSAI','BIPAP'];
+function vmo(ty,s0){$('#vmd').innerHTML='<option value="">Choisir…</option>'+(ty=='i'?VMI:ty=='n'?VMN:[]).map(m=>`<option${m==s0?' selected':''}>${m}</option>`).join('')}
+function vtyp(){vmo($('#vty').value);vu()}
+function vfill(v){const s=(id,x)=>$(id).value=x;s('#vs','');s('#vfl','');s('#vty','');vmo('');s('#vfi','');s('#vso','');s('#vs1','');s('#vs2','');
+if(v){if(v.m=='O2'){if(v.flow){s('#vs','o2');s('#vfl',v.flow)}else s('#vs','air')}else if(v.m=='Optiflow'){s('#vs','hd');s('#vfl',v.flow);s('#vfi',v.fio2)}else{s('#vs','vm');s('#vty',v.ni?'n':'i');vmo(v.ni?'n':'i',v.m)}
+if(v.so){if(v.so=='>94 %')s('#vso','1');else if(v.so=='88–90 %')s('#vso','2');else{s('#vso','l');const m=v.so.match(/(\d+)\D+(\d+)/);if(m){s('#vs1',m[1]);s('#vs2',m[2])}}}}
+vu()}
+function vc(){const p=P[sel],s=$('#vs').value,ty=$('#vty').value,md=$('#vmd').value,fl=parseFloat($('#vfl').value),fi=parseFloat($('#vfi').value),so=$('#vso').value,s1=parseFloat($('#vs1').value),s2=parseFloat($('#vs2').value),E=[],W=[];
+if(!s)E.push('Choisissez le support respiratoire : air ambiant, oxygène ou ventilation mécanique.');
+if(s=='o2'&&!(fl>0&&fl<=15))E.push('Saisissez le débit d’oxygène en L/min (supérieur à 0, jusqu’à 15).');
+if(s=='hd'){if(!(fl>=10&&fl<=70))E.push('Débit Optiflow : 10 à 70 L/min.');if(!(fi>=21&&fi<=100))E.push('FiO₂ : 21 à 100 %.')}
+if(s=='vm'){if(!ty)E.push('Précisez obligatoirement si la ventilation est invasive ou non invasive (VNI).');else if(!md)E.push('Choisissez le mode ventilatoire (obligatoire).')}
+if(s){if(!so)E.push('Choisissez obligatoirement l’objectif de SpO₂ (> 94 %, 88–90 % ou saisie libre).');else if(so=='l'&&!(s1>=50&&s2<=100&&s1<s2))E.push('Objectif libre de SpO₂ : saisissez un minimum et un maximum cohérents (50 à 100 %).')}
+const sot=so=='1'?'>94 %':so=='2'?'88–90 %':so=='l'&&s1<s2?`${s1}–${s2} %`:'';
+return{p,s,ty,md,fl,fi,sot,E,W}}
+function vu(){if(sel===null)return;const s=$('#vs').value,ty=$('#vty').value,so=$('#vso').value,m=s=='vm',sh=(id,b)=>$(id).hidden=!b;
+sh('#lfl',s=='o2'||s=='hd');sh('#lty',m);sh('#lmd',m&&!!ty);sh('#lfi',s=='hd');sh('#lso',!!s);sh('#lsl',!!s&&so=='l');
+const r=vc();$('#vchk').innerHTML=r.E.map(x=>`<li><b class="lv2">Bloquant</b> ${x}</li>`).concat(r.W.map(x=>`<li><b class="lv1">Avertissement</b> ${x}</li>`)).join('')||'<li class="mu">Aucun contrôle en échec.</li>';
+const b=$('#vok');b.disabled=r.E.length>0;b.textContent=ed&&ed.t=='vl'?'Enregistrer la modification':'Valider le mode ventilatoire'}
+function vvalid(){const r=vc();if(r.E.length)return;const p=r.p,t=Date.now();let v;
+if(r.s=='air')v={m:'O2',flow:0};else if(r.s=='o2')v={m:'O2',flow:r.fl};else if(r.s=='hd')v={m:'Optiflow',flow:r.fl,fio2:r.fi};
+else{const pm=[...p.vl].reverse().map(x=>x.v).find(x=>x.peep!=null)||{vt:450,peep:5,fio2:40};v={m:r.md,peep:pm.peep,fio2:pm.fio2,vt:pm.vt};if(r.ty=='n')v.ni=true;if(r.ty=='i'&&r.md=='VAC')v.pp=pm.peep+10+R(Math.random()*6)}
+v.so=r.sot;
+p.vl=p.vl.filter(x=>x.t<=t);p.vl.push({t,v,by:USER});log(`${ed?'Mode ventilatoire modifié':'Mode ventilatoire prescrit'} : ${vplain(v)}, objectif SpO₂ ${v.so}`,p.b);ed=null;vit(p);svt(p);rxl(p);lgl(p);op=null;ops()}
+const EX={pacs:{n:'PACS Philips',d:'Imagerie',t:'Ouverture du PACS sur les examens d’imagerie du patient.'},
+lab:{n:'Cyberlab',d:'Biologie',t:'Ouverture de Cyberlab sur les résultats de biologie du patient.'},
+lab_rx:{n:'Cyberlab',d:'Prescription d’examens paracliniques',t:'Ouverture de Cyberlab sur la prescription d’examens paracliniques (biologie, imagerie, explorations).'},
+psl:{n:'Cursus',d:'Produits sanguins',t:'Ouverture de Cursus sur la prescription de produits sanguins labiles.'},
+hm:{n:'Hôpital Manager',d:'Logiciel métier',t:'Ouverture du dossier du patient dans Hôpital Manager.'}};
+function ext(k){const p=P[sel],e=EX[k],d=$('#cx');log(`Appel contextuel : ${e.n} (${e.d.toLowerCase()})`,p.b);lgl(p);
+d.innerHTML=`<h3>${e.n}<small>${e.d}</small></h3><p>${e.t}</p><dl><dt>Patient</dt><dd>${p.ini}, ${p.sx}, ${p.a} ans, ${p.kg} kg</dd><dt>Lit</dt><dd>Lit ${p.b}, réanimation médicale</dd><dt>IPP</dt><dd>${480100+p.b*17} (fictif)</dd><dt>Séjour</dt><dd>S${26100000+p.b*931} (fictif)</dd><dt>Utilisateur</dt><dd>Dr Démo (fictif)</dd></dl><p class="mu">Simulation : dans le logiciel réel, l’application s’ouvrirait ici avec le patient déjà sélectionné. Aucune donnée n’est envoyée.</p><form method="dialog"><button class="pb2">Fermer</button></form>`;
+try{d.showModal()}catch(x){d.setAttribute('open','')}}
+const NT={crrt:{n:'Dialyse continue',par:[{k:'qb',l:'Débit sang',u:'mL/min',lo:100,hi:250,max:400,d:150},{k:'qd',l:'Débit dialysat',u:'mL/h',lo:1000,hi:3000,max:5000,d:1500},{k:'qpre',l:'Prédilution',u:'mL/h',lo:0,hi:1500,max:3000,d:500},{k:'qpo',l:'Postdilution',u:'mL/h',lo:0,hi:1500,max:3000,d:500},{k:'uf',l:'UF',u:'mL/h',lo:0,hi:300,max:500,d:100}]},
+tc:{n:'Contrôle thermique ciblé',par:[{k:'tc',l:'Température cible',u:'°C',lo:32,hi:36.5,min:30,max:38,d:34,dd:1}]},
+ent:{n:'Nutrition entérale',par:[{k:'deb',l:'Débit',u:'mL/h',lo:20,hi:80,max:150,d:50}]},
+dv:{n:'Décubitus ventral',par:[{k:'dur',l:'Durée par séance',u:'h',lo:12,hi:16,max:20,d:16}]},
+ecmo:{n:'ECMO veino-veineuse',par:[{k:'qs',l:'Débit sang',u:'L/min',lo:2,hi:6,max:7,d:4,dd:1},{k:'bal',l:'Balayage',u:'L/min',lo:1,hi:8,max:10,d:4,dd:1},{k:'fi',l:'FiO₂ membrane',u:'%',lo:40,hi:100,min:21,max:100,d:80}]},
+kine:{n:'Kinésithérapie respiratoire',par:[{k:'n',l:'Séances par jour',u:'/j',lo:1,hi:3,max:6,min:1,d:2},{k:'h',l:'Heure de la 1re séance',u:'h',lo:6,hi:12,min:0,max:20,d:9},{k:'e',l:'Écart entre séances',u:'h',lo:3,hi:8,min:1,max:12,d:4}]}};
+function nmk(){const d=NT[$('#nk').value];$('#nmp').innerHTML=d.par.map(q=>`<label>${q.l} (${q.u})<input type="number" step="any" min="0" data-k="${q.k}" value="${q.d}" oninput="nmu()"></label>`).join('');nmu()}
+function nmc(){const p=P[sel],k=$('#nk').value,d=NT[k],v={},E=[],W=[];
+d.par.forEach(q=>{const x=parseFloat($(`#nmp [data-k="${q.k}"]`).value),dd=q.dd||0,mn=q.min||0;v[q.k]=x;
+if(isNaN(x))E.push(`${q.l} : saisissez une valeur.`);
+else if(x<mn||x>q.max)E.push(`${q.l} : ${f(x,dd)} ${q.u} hors des limites autorisées (${f(mn,dd)} à ${f(q.max,dd)} ${q.u}).`);
+else if(x<q.lo||x>q.hi)W.push(`${q.l} : hors de la plage usuelle (${f(q.lo,dd)} à ${f(q.hi,dd)} ${q.u}).`)});
+if(k=='kine'&&v.h+(v.n-1)*v.e>=24)E.push('Les séances dépassent minuit : réduisez le nombre de séances ou l’écart.');
+if(!(ed&&ed.t=='nm')&&p.nm.some(r=>r.k==k))E.push(`${d.n} est déjà en cours : modifiez-le ou arrêtez-le avant d’en prescrire un nouveau.`);
+return{k,d,v,E,W}}
+function nmu(){const r=nmc();$('#nchk').innerHTML=r.E.map(m=>`<li><b class="lv2">Bloquant</b> ${m}</li>`).concat(r.W.map(m=>`<li><b class="lv1">Avertissement</b> ${m}</li>`)).join('')||'<li class="mu">Aucun contrôle en échec.</li>';
+const b=$('#nok');b.disabled=r.E.length>0;b.textContent=ed&&ed.t=='nm'?'Enregistrer la modification':r.W.length?'Valider malgré les avertissements':'Valider la prescription'}
+function nmvalid(){const p=P[sel],r=nmc();if(r.E.length)return;const t=Date.now(),txt=`${r.d.n}, ${r.d.par.map(q=>q.l.toLowerCase()+' '+f(r.v[q.k],q.dd||0)+' '+q.u).join(', ')}`;
+if(ed&&ed.t=='nm'){const q=p.nm[ed.j];q.v={...r.v};q.ev.push({t,v:{...r.v},by:USER});log(`Prescription modifiée : ${txt}`,p.b)}
+else{p.nm.push({k:r.k,s:t,v:{...r.v},ev:[{t,v:{...r.v},by:USER}]});log(`Prescription validée : ${txt}${r.W.length?' (avertissements acceptés : '+r.W.length+')':''}`,p.b);
+if(r.k=='crrt')log(`Surveillance ajoutée automatiquement : UF (mL/${ivt(p.iv)} et mL/min)`,p.b)}
+ed=null;$('#nk').disabled=false;rxl(p);svt(p);lgl(p);op=null;ops()}
+function stopN(i,j){const p=P[i],r=p.nm.splice(j,1)[0];r.e=Date.now();r.eby=USER;p.nx.push(r);log(`Traitement arrêté : ${NT[r.k].n}`,p.b);rxl(p);svt(p);lgl(p)}
+const WR=50,WN=280,gz=(u,m,s,a)=>a*Math.exp(-((u-m)*(u-m))/(2*s*s)),ecgF=u=>gz(u,.1,.03,.12)+gz(u,.185,.008,-.12)+gz(u,.2,.011,1)+gz(u,.215,.011,-.25)+gz(u,.42,.05,.3),plF=u=>gz(u,.25,.09,1)+gz(u,.55,.08,.22),arF=u=>gz(u,.2,.08,1)+gz(u,.5,.07,.2);
+function wstep(p,now){const w=p.w||(p.w={ph:Math.random(),t:now-WN/WR*1000,e:[],s:[],a:[]});let n=Math.floor((now-w.t)/1000*WR);if(n<=0)return;w.t+=n*1000/WR;if(n>WN)n=WN;
+for(let i=0;i<n;i++){w.ph=(w.ph+p.hr/60/WR)%1;const u=w.ph,sys=SY(p.map,p.pp),dia=DY(p.map,p.pp),amp=.55+.45*Math.min(1,Math.max(0,(p.spo2-80)/20));
+w.e.push(ecgF(u)+(Math.random()-.5)*.02);w.s.push(plF((u+.9)%1)*amp+(Math.random()-.5)*.01);w.a.push(dia+(sys-dia)*arF((u+.92)%1)/1.1);
+if(w.e.length>WN){w.e.shift();w.s.shift();w.a.shift()}}}
+function wdraw(p){const c=$('#w'+p.i);if(!c)return;const g=c.getContext('2d'),W=c.width,H=c.height,h=H/3,w=p.w;g.fillStyle='#0b141a';g.fillRect(0,0,W,H);
+const lane=(arr,k,col,lo,hi,lab)=>{g.strokeStyle=col;g.lineWidth=1.4;g.beginPath();arr.forEach((v,i)=>{const x=W-arr.length+i,y=(k+1)*h-3-(v-lo)/(hi-lo)*(h-6);i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke();g.fillStyle=col;g.font='10px sans-serif';g.fillText(lab,3,k*h+10)};
+lane(w.e,0,'#3ddc84',-.45,1.15,'ECG');lane(w.s,1,'#4fc3f7',-.1,1.2,'SpO₂');lane(w.a,2,'#ff5a5f',35,150,'PA')}
+let wl=0;function wloop(now){if(sel===null&&now-wl>38){wl=now;P.forEach(p=>{wstep(p,now);wdraw(p)})}requestAnimationFrame(wloop)}
+function render(){cedit=null;const a=$('#app');
+if(sel===null){a.innerHTML=utb()+grid();gu()}else{const p=P[sel];a.innerHTML=detail(p);pick();nmk();vfill(null);vit(p);svp(p);svt(p,1);trend(p);alp(p,true);rxl(p);lgl(p);ops();fbU(p,1)}}
+function show(i){sel=i;op=null;ed=null;render();window.scrollTo(0,0)}
+function back(){const i=sel;sel=null;render();const b=$('#b'+i);if(b)b.focus()}
+let tc=0;function tick(){step();sum();if(sel===null)gu();else{const p=P[sel];vit(p);fbU(p);if(!cedit)svt(p);trend(p);alp(p);upd();if(++tc%30==0&&!$('#rx').contains(document.activeElement))rxl(p)}}
+P[2].cs=[{id:1,n:'Drain',k:'vol',lo:0,hi:10,iv:120}];P[2].nid=2;P[6].cs=[{id:1,n:'Surveillance pupillaire',k:'pup',lo:0,hi:10,iv:60}];P[6].nid=2;
+const VT=[{m:'VAC',fio2:50,peep:8,vt:480,pp:22},{m:'VAC',fio2:70,peep:12,vt:420,pp:28},{m:'VAC',fio2:40,peep:5,vt:450,pp:20},{m:'O2',flow:4},{m:'VSAI',fio2:35,peep:5,vt:450},{m:'Optiflow',flow:50,fio2:60},{m:'VAC',fio2:30,peep:5,vt:480,pp:19},{m:'O2',flow:2},{m:'VAC',fio2:40,peep:6,vt:470,pp:21},{m:'BIPAP',ni:true,fio2:35,peep:5,vt:500},{m:'VAC',fio2:45,peep:7,vt:480,pp:23},{m:'O2',flow:0}];
+const MD0=new Date().setHours(0,0,0,0);
+P.forEach((p,i)=>{p.vl=[{t:MD0-30*36e5,v:VT[i]}];p.nm=[];p.nx=[]});
+P[4].vl=[{t:MD0-30*36e5,v:{m:'VAC',fio2:40,peep:6,vt:450,pp:21}},{t:MD0+480*6e4,v:VT[4]}];P[1].vl=[{t:MD0-30*36e5,v:{m:'VAC',fio2:80,peep:14,vt:420,pp:30}},{t:MD0+360*6e4,v:VT[1]}];P[5].vl=[{t:MD0-30*36e5,v:{m:'O2',flow:10}},{t:MD0+600*6e4,v:VT[5]}];
+{const N0=Date.now(),md=new Date(N0).setHours(0,0,0,0),s=Math.min(md+6*36e5,N0-36e5),v1={qb:150,qd:1500,qpre:500,qpo:500,uf:80},v2={qb:150,qd:1500,qpre:500,qpo:500,uf:120};P[0].nm=[{k:'crrt',s,v:v2,ev:[{t:s,v:v1},{t:s+(N0-s)/2,v:v2}]}];P[8].nm=[{k:'tc',s:N0-30*36e5,v:{tc:34},ev:[{t:N0-30*36e5,v:{tc:34}}]}]}
+P.forEach((p,i)=>p.vl.forEach(e=>{e.v.so=e.v.so||(i==9?'88–90 %':'>94 %')}));
+{const q=mki(6,4,100,{nb:4,dur:360,t0:360});q.s=q.ev[0].t=MD0-30*36e5;P[0].rx.push(q);const q2=mki(7,2,100,{nb:3,dur:20,t0:360});q2.s=q2.ev[0].t=MD0-30*36e5;P[10].rx.push(q2)}
+{const N0=Date.now(),A=(i,k,v,h)=>P[i].nm.push({k,s:N0-h*36e5,v,ev:[{t:N0-h*36e5,v:{...v}}]});
+A(0,'ent',{deb:30},10);A(1,'dv',{dur:16},6);A(1,'ecmo',{qs:4,bal:4,fi:80},20);A(1,'ent',{deb:40},14);A(2,'tc',{tc:36.5},5);A(3,'kine',{n:2,h:10,e:6},12);A(4,'kine',{n:3,h:9,e:4},8);A(4,'ent',{deb:40},9);A(5,'kine',{n:3,h:9,e:4},7);A(6,'tc',{tc:36},18);A(6,'ent',{deb:50},16);A(7,'ent',{deb:40},11);A(7,'kine',{n:2,h:10,e:6},6);A(8,'ent',{deb:20},12);A(9,'kine',{n:3,h:9,e:4},6);A(10,'ent',{deb:40},9);A(10,'kine',{n:2,h:10,e:6},5);A(11,'kine',{n:2,h:10,e:6},4)}
+{const IT=(i,d,x,vf,nb,du,t0)=>{const q=mki(d,x,vf,{nb,dur:du,t0});q.s=q.ev[0].t=MD0-30*36e5;P[i].rx.push(q)};IT(3,6,4,100,4,360,360);IT(5,6,4,100,4,360,360);IT(7,6,4,100,4,360,360);IT(4,7,2,100,3,20,360);IT(11,7,2,100,3,20,360)}
+{const t0=Date.now();P[1].hx.push({d:2,x:.15,c:1,fl:flow(2,.15,1,95),s:t0-20*36e5,e:t0-6*36e5,ev:[{t:t0-20*36e5,x:.1},{t:t0-13*36e5,x:.15}]})}
+/* ====== Simulation en santé : patients fictifs, scénarios, médicaments personnalisés ====== */
+let FM=true,W=null;
+const VR={hr:{l:'Fréquence cardiaque',u:'bpm',min:25,max:220,dd:0},pa:{l:'Pression artérielle',u:'mmHg'},spo2:{l:'SpO₂',u:'%',min:50,max:100,dd:0},rr:{l:'Fréquence respiratoire',u:'/min',min:4,max:60,dd:0},t:{l:'Température',u:'°C',min:30,max:43,dd:1},di:{l:'Diurèse',u:'mL/kg/h',min:0,max:10,dd:1},evn:{l:'EVN (douleur)',u:'/10',min:0,max:10,dd:0}};
+const VK={hr:'hr',pa:'map',spo2:'spo2',rr:'rr',t:'t',di:'di',evn:'evn'},DV={hr:140,spo2:85,rr:32,t:39.5,di:.2,evn:8};
+const RS={none:'Aucune (persiste)',fill:'Après remplissage vasculaire',drug:'Après administration d’un médicament',auto:'Spontanée après un délai',man:'Manuelle (formateur)'};
+const SY=(m,pp)=>R(m+2*(pp??45)/3),DY=(m,pp)=>R(m-(pp??45)/3);
+const mmss=ms=>{ms=Math.max(0,ms);const s=Math.round(ms/1000);return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
+const clean=t=>String(t??'').replace(/[<>&"]/g,'').trim();
+let HS=Date.now();
+
+/* ---- moteur ---- */
+function evTo(p,e){if(e.k=='pa')return{map:(+e.ps+2*e.pd)/3,pp:e.ps-e.pd};if(e.k=='di')return{di:e.v*p.kg};return{[e.k]:+e.v}}
+const LG=e=>e.lg===''||e.lg==null?2:+e.lg,H50=e=>e.h50===''||e.h50==null?3:+e.h50;
+function evW(e,el){if(e.st=='on')return (+e.z>0?Math.min(1,(el-e.ts)/(e.z*6e4)):1)*(1-(e.cr||0));if(e.st=='res')return e.res=='fill'?0:+e.r>0?Math.max(0,1-(el-e.tr)/(e.r*6e4)):0;return 0}
+const isFill=d=>d.it&&d.nd&&!d.blood;
+function fillVol(p,t0,t1){const N=t1??Date.now();if(!(N>t0))return 0;return [...p.rx,...p.hx].filter(r=>isFill(DR[r.d])).reduce((s,r)=>s+vol(p,r,t0,N),0)}
+function gotDrug(p,n,t0,lg){const N=Date.now()-(lg||0);return [...p.rx,...p.hx].some(r=>DR[r.d].n==n&&(r.it?adm(r,t0-6e4,N).some(a=>a.s>=t0-6e4&&a.s<=N):r.ev.some(v=>v.t>=t0&&v.t<=N)))}
+function trig(p,e,el){e.st='on';e.cr=0;e.ts=el;e.tR=Date.now();log(`Simulation : déclenchement, ${evLab(e)}`,p.b)}
+function reso(p,e,el,how){e.st='res';e.tr=el;log(`Simulation : résolution${how=='man'?' par le formateur':''}, ${evLab(e)}`,p.b)}
+function scStep(p){const s=p.sc;if(!s||!s.run)return;s.el+=1000;const el=s.el;s.ev.forEach(e=>{
+if(e.st=='wait'&&el>=e.nx)trig(p,e,el);
+if(e.st=='on'&&e.res=='fill'){const N=Date.now()-LG(e)*6e4,T=Math.max(6,(H50(e)-LG(e))*60);if(fillVol(p,Math.max(e.tR-6e4,N-1500),N)>0)e.cr=(e.cr||0)+(1-(e.cr||0))*(1-Math.pow(2,-1/T))}
+if(e.st=='on'&&(e.res=='fill'&&e.cr>=.98||e.res=='drug'&&gotDrug(p,e.rd,e.tR,LG(e)*6e4)||e.res=='auto'&&el-e.ts>=e.rv*6e4))reso(p,e,el);
+if(e.st=='res'&&evW(e,el)<=0){if(e.left>0){e.left--;e.st='wait';e.nx=el+(+e.rt||0)*6e4}else e.st='done'}})}
+function fxD(p,k){if(!p.fx||!p.fx.length)return 0;const N=Date.now();let s=0;
+p.fx.forEach(x=>{if(VK[x.k]!=k)return;const lag=Math.max(.05,+x.lag||0)*6e4,dv=x.k=='di'?x.dv*p.kg:+x.dv,
+one=(s0,E,sc)=>{if(N<s0)return 0;const a=Math.min(1,(N-s0)/lag),b=N<=E?1:Math.max(0,1-(N-E)/lag);return a*b*sc};
+[...p.rx,...p.hx].forEach(r=>{const D=DR[r.d];if(D.n!=x.dn)return;
+if(r.it)adm(r,N-2*DAY,N).forEach(a=>{const E=a.s+(+x.dur>0?x.dur*6e4:a.du);s+=dv*one(a.s,E,x.pr?a.x/(D.d||1):1)});
+else{const e0=r.e??Infinity,E=+x.dur>0?Math.min(e0,r.s+x.dur*6e4):e0;let xd=r.ev[0].x;r.ev.forEach(v=>{if(v.t<=N)xd=v.x});s+=dv*one(r.s,E,x.pr?xd/(D.d||1):1)}})});return s}
+function tgt(p,k){let v=p.tg[k];if(v==null)return p[k];const s=p.sc;if(s)s.ev.forEach(e=>{const w=evW(e,s.el);if(w>0){const to=evTo(p,e)[k];if(to!=null)v+=(to-v)*w}});return v+fxD(p,k)}
+function step(){P.forEach(p=>{scStep(p);for(const k in NZ){if(p[k]==null)continue;const T=tgt(p,k),v=p[k]+(T-p[k])*.1+(Math.random()-.5)*NZ[k];p[k]=Math.min(LM[k][1],Math.max(LM[k][0],v))}});
+const N=Date.now(),HK=['hr','map','spo2','rr','t','pp','di','evn'];
+while(N-HS>=3e5){HS+=3e5;P.forEach(p=>HK.forEach(k=>{if(p.h[k]&&p[k]!=null){p.h[k].shift();p.h[k].push(p[k])}}))}
+P.forEach(p=>HK.forEach(k=>{if(p.h[k]&&p[k]!=null)p.h[k][287]=p[k]}))}
+function mkSc(sd,auto){if(!sd||!sd.on||!sd.ev||!sd.ev.length)return null;return{run:!!auto,el:0,ev:sd.ev.map(e=>({...e,st:'wait',nx:(+e.at||0)*6e4,left:Math.max(0,parseInt(e.n)||0)}))}}
+
+/* ---- textes ---- */
+function evLab(e){const V=VR[e.k];return e.k=='pa'?`PA à ${e.ps}/${e.pd} mmHg`:`${V.l} à ${f(e.v,V.dd)} ${V.u}`}
+function evTxt(e){const V=VR[e.k],c=e.k=='pa'?`PA à ${e.ps??'?'}/${e.pd??'?'} mmHg`:`${V.l} à ${e.v===''||e.v==null?'?':e.v} ${V.u}`;
+let s=`${c}, ${+e.at||0} min après le démarrage du scénario, ${+e.z>0?`installation progressive sur ${e.z} min`:'installation brutale'}. `;
+s+=e.res=='none'?'Persiste jusqu’à la fin de la séance.':`${e.res=='fill'?`Correction dès ${LG(e)} min après le début d’un remplissage vasculaire : 50 % à ${H50(e)} min, quasi complète vers ${f(LG(e)+(H50(e)-LG(e))*5.6,0)} min, tant que le remplissage coule (arrêt du remplissage = arrêt de la correction)`:e.res=='drug'?`Résolution ${LG(e)} min après l’administration de ${e.rd||'?'}, retour à l’état de base en ${+e.r||0} min`:e.res=='auto'?`Résolution spontanée après ${e.rv||'?'} min, retour à l’état de base en ${+e.r||0} min`:`Résolution déclenchée par le formateur, retour à l’état de base en ${+e.r||0} min`}.${+e.n>0?` Récidive ${e.n} fois, ${+e.rt||0} min après chaque résolution.`:''}`;return s}
+function fxLab(x){const V=VR[x.k],u=x.k=='pa'?'mmHg de PAM':V.u,dd=x.k=='t'||x.k=='di'?1:0;return `${V.l} ${+x.dv>0?'+':''}${f(+x.dv||0,dd)} ${u}, effet maximal en ${f(+x.lag||0,0)} min${+x.dur>0?`, pendant ${f(x.dur,0)} min`:', tant que le médicament est administré'}${x.pr?', proportionnel à la dose':''}`}
+function fxTxt(x){const D=DR.find(d=>d.n==x.dn);return `${x.dn} : ${fxLab(x)}${x.pr&&D?` (référence : ${f(D.d,2)} ${D.u})`:''}.`}
+function evSt(p,e){const el=p.sc.el;if(e.st=='wait')return `déclenchement dans ${mmss(e.nx-el)}`;
+if(e.st=='on'){const w=+e.z>0?Math.min(1,(el-e.ts)/(e.z*6e4)):1,a=w<1?`installation ${R(w*100)} %`:'installé';const r=e.res=='fill'?`correction ${R((e.cr||0)*100)} % (${R(fillVol(p,e.tR))} mL de remplissage perfusés)`:e.res=='drug'?`attend : ${e.rd}`:e.res=='auto'?`résolution dans ${mmss(e.rv*6e4-(el-e.ts))}`:e.res=='man'?'résolution par le formateur':'persistant';return `${a}, ${r}`}
+if(e.st=='res')return `retour à l’état de base (${R((1-evW(e,el))*100)} %)`;return 'terminé'}
+
+/* ---- bandeau formateur ---- */
+function fbU(p,force){const b=$('#fb');if(!b)return;const s=p.sc,hx=p.fx&&p.fx.length;b.hidden=!(s||hx);if(b.hidden)return;
+const sg=JSON.stringify([s?[s.run,!!s.el,s.ev.map(e=>[e.st,e.left])]:0,hx]);
+if(force||b.dataset.sg!==sg){b.dataset.sg=sg;
+b.innerHTML=`<div class="fbh"><b>Formateur</b>${s?`<span id="fbt" class="fbt"></span><button class="sm" onclick="scRun()">${s.run?'Mettre en pause':s.el?'Reprendre':'Démarrer le scénario'}</button><button class="sm" onclick="scReset()">Réinitialiser</button>`:''}<button class="sm" onclick="pfOpen(sel,2)">Modifier le scénario</button><span class="mu">Masquez ce bandeau avec « Vue formateur » avant de laisser la place aux apprenants.</span></div>`
++(s?`<ul class="fbl">${s.ev.map((e,j)=>`<li><span class="fbn">${esc(evLab(e))}</span><span id="fbs${j}" class="mu"></span>${+e.n>0?`<small class="mu">${e.left} récidive${e.left>1?'s':''} restante${e.left>1?'s':''}</small>`:''}${e.st=='wait'?`<button class="sm" onclick="scTrig(${j})">Déclencher maintenant</button>`:''}${e.st=='on'?`<button class="sm" onclick="scRes(${j})">Résoudre maintenant</button>`:''}</li>`).join('')}</ul>`:'')
++(hx?`<p class="fbx"><b>Effets programmés</b> : ${p.fx.map(x=>esc(x.dn)+' → '+esc(fxLab(x))).join(' ; ')}</p>`:'')}
+if(s){const t=$('#fbt');if(t)t.textContent=`${s.run?'En cours':s.el?'En pause':'Non démarré'}, ${mmss(s.el)} écoulées`;s.ev.forEach((e,j)=>{const x=$('#fbs'+j);if(x)x.textContent=evSt(p,e)})}}
+function scRun(){const s=P[sel].sc;s.run=!s.run;log(`Simulation : scénario ${s.run?'démarré':'mis en pause'}`,P[sel].b);fbU(P[sel],1)}
+function scReset(){const p=P[sel];p.sc=mkSc(p.scd,false);log('Simulation : scénario réinitialisé',p.b);fbU(p,1)}
+function scTrig(j){const p=P[sel],e=p.sc.ev[j];p.sc.run=true;trig(p,e,p.sc.el);fbU(p,1)}
+function scRes(j){const p=P[sel],e=p.sc.ev[j];reso(p,e,p.sc.el,'man');fbU(p,1)}
+function tgFM(){FM=!FM;document.body.classList.toggle('nofm',!FM);const b=$('#fmb');b.setAttribute('aria-pressed',FM);b.textContent=FM?'Vue formateur : affichée':'Vue formateur : masquée'}
+
+/* ---- conservation (navigateur) ---- */
+const SK='simrea.v1';let ST={demo:true,drugs:[],pts:[]};
+try{const x=JSON.parse(localStorage.getItem(SK)||'null');if(x)ST={demo:x.demo!==false,drugs:x.drugs||[],pts:x.pts||[],scs:x.scs||[]}}catch(e){}
+function save(){ST.pts=P.filter(p=>p.sim).map(p=>p.def);try{localStorage.setItem(SK,JSON.stringify(ST))}catch(e){}}
+function reidx(){P.sort((a,b)=>a.b-b.b);P.forEach((p,i)=>p.i=i)}
+function freeBed(b,self){const used=x=>P.some(p=>p.b==x&&p!==self);if(b>=1&&!used(b))return b;let n=1;while(used(n))n++;return n}
+
+/* ---- médicaments personnalisés ---- */
+function mkDrug(c){const d=+c.d,mx=+c.mx;let D;
+if(c.ty=='i')D={n:c.n,it:1,xf:1,dil:'NaCl 0,9 %',u:'mg',k:0,m:1,c:d/50,cu:'mg/mL',lo:d*.5,hi:d*2,max:mx,dmax:mx*6,s:0,d,nb:1,dur:+c.dur||15,t0:360,pr:'ampoule',q:d,pv:0,pt:`${f(d,2)} mg (produit fictif)`,cx:d/5,rc:[{s:'Dilution simulée',n:1,vf:50,t:`${f(d,2)} mg qsp 50 mL de NaCl 0,9 %`}]};
+else if(c.u=='µg/kg/min'){const cc=d*840,q=cc*50;D={n:c.n,u:'µg/kg/min',k:1,m:60,c:cc,cu:'µg/mL',lo:d*.25,hi:d*2,max:mx,s:0,d,pr:'ampoule',q,pv:10,pt:`${f(q/1000,2)} mg / 10 mL (produit fictif)`,cx:q/10,rc:[{s:'Dilution simulée',n:1,vf:50,t:`1 ampoule qsp 50 mL de NaCl 0,9 % (${f(cc,1)} µg/mL)`}]}}
+else{const q=d*10;D={n:c.n,u:'mg/h',k:0,m:1,c:q/50,cu:'mg/mL',lo:d*.25,hi:d*2,max:mx,s:0,d,pr:'ampoule',q,pv:10,pt:`${f(q,2)} mg / 10 mL (produit fictif)`,cx:q/10,rc:[{s:'Dilution simulée',n:1,vf:50,t:`1 ampoule qsp 50 mL de NaCl 0,9 % (${f(q/50,2)} mg/mL)`}]}}
+D.cust=c;return D}
+function addDrug(c,quiet){if(!c||!c.n||DR.some(x=>x.n.toLowerCase()==String(c.n).toLowerCase()))return false;DR.push(mkDrug(c));if(!quiet){ST.drugs.push(c);save()}return true}
+
+/* ---- création d'un patient ---- */
+const VTF=v=>v.m=='O2'?(v.flow?'o2':'air'):v.m=='Optiflow'?'hd':v.ni?'vni':v.m.toLowerCase();
+const MOD=[{lab:'Patient vierge (constantes normales)',dx:'',a:60,kg:75,sx:'Homme',base:{hr:80,s:125,d:75,spo2:97,rr:16,t:37,di:1,evn:1},vm:'air',v:{},so:'>94 %',rx:[]},
+...B.map((b,i)=>{const t={hr:b[5],spo2:b[6],map:b[7],rr:b[8],t:b[9],...b[10]},v=VT[i];return{lab:`${b[3]} (${SX[i]=='Homme'?'homme':'femme'}, ${b[1]} ans)`,dx:b[3],a:b[1],kg:b[2],sx:SX[i],base:{hr:t.hr,s:t.map+30,d:t.map-15,spo2:t.spo2,rr:t.rr,t:t.t,di:{0:.5,2:.3,3:2}[i]||1,evn:3},vm:VTF(v),v,so:i==9?'88–90 %':'>94 %',rx:b[11].map(([d,x])=>[DR[d].n,x])}})];
+function newPat(d){const N0=Date.now(),md=new Date(N0).setHours(0,0,0,0),kg=+d.kg,b=d.base,map=(b.s+2*b.d)/3,pp=b.s-b.d,i=P.length;
+const p={i,sx:d.sx,b:d.b,ini:d.ini,a:d.a,kg,dx:d.dx,v:'',ack:{},sig:'',rx:[],hx:[],h:{},iv:120,cs:[],nid:1,ov:{},nm:[],nx:[],sim:1,def:d};
+p.tg={hr:+b.hr,spo2:+b.spo2,map,pp,rr:+b.rr,t:+b.t,di:b.di*kg,evn:+b.evn};Object.assign(p,p.tg);
+['hr','map','spo2','rr','t','pp'].forEach(k=>p.h[k]=Array.from({length:288},(_,n)=>Math.min(LM[k][1],Math.max(LM[k][0],p.tg[k]+Math.sin(n/17+i+k.length)*NZ[k]*.8+(Math.random()-.5)*NZ[k]*1.5))));
+p.h.di=Array.from({length:288},(_,n)=>Math.max(0,R(p.tg.di*(1+.15*Math.sin(n/23+i))+(Math.random()-.5)*6)));
+p.h.evn=Array.from({length:288},(_,n)=>Math.min(10,Math.max(0,R(p.tg.evn+1.2*Math.sin(n/31+i)+(Math.random()-.5)))));
+p.vl=[{t:md-30*36e5,v:{...d.vent}}];
+(d.rx||[]).forEach(([dn,x])=>{const j=DR.findIndex(z=>z.n==dn);if(j>=0)p.rx.push(sd(j,x,kg))});
+p.scd=d.sc||null;p.sc=mkSc(p.scd,p.scd&&p.scd.auto);p.fx=p.scd&&p.scd.on?(d.fx||[]):[];
+P.push(p);return p}
+
+/* ---- unité ---- */
+function utb(){const dm=P.some(p=>!p.sim);return `<div class="utb">${P.length?'':'<p class="mu">Aucun patient dans l’unité. Créez un premier patient fictif.</p>'}<button class="pb2" onclick="pfOpen(null)">Créer un patient fictif</button><button class="pb2 alt" onclick="fpick()">Ouvrir un fichier (patient ou scénario)</button><span class="mu fdr">ou glissez-déposez des fichiers .json sur la page</span><span class="fmo">${dm?`<button class="pb2 alt" onclick="rmDemo(this)">Retirer les patients de démonstration</button>`:`<button class="pb2 alt" onclick="addDemo()">Remettre les patients de démonstration</button>`}</span></div>`}
+function rmDemo(btn){if(!btn.dataset.c){btn.dataset.c=1;btn.textContent='Confirmer le retrait des patients de démonstration';return}
+for(let j=P.length-1;j>=0;j--)if(!P[j].sim)P.splice(j,1);reidx();ST.demo=false;save();render();sum()}
+function addDemo(){ST.demo=true;save();try{location.reload()}catch(e){}}
+function rmPat(btn){if(!btn.dataset.c){btn.dataset.c=1;btn.textContent='Confirmer le retrait du patient';return}
+const p=P[sel];P.splice(sel,1);reidx();save();sel=null;render();sum()}
+
+/* ---- formulaire patient ---- */
+const VMO=[['air','Air ambiant'],['o2','Oxygène (lunettes, masque)'],['hd','Oxygène à haut débit (Optiflow)'],['vni','VNI (BIPAP)'],['vac','Ventilation invasive, VAC'],['vsai','Ventilation invasive, VSAI'],['aprv','Ventilation invasive, APRV']];
+const opt=(arr,v)=>arr.map(([k,t])=>`<option value="${esc(k)}"${k==v?' selected':''}>${esc(t)}</option>`).join('');
+function pfOpen(i,tab){const p=i==null?null:P[i];
+W={i,ev:p&&p.scd?p.scd.ev.map(e=>({...e})):[],fx:p&&p.fx&&p.fx.length?p.fx.map(x=>({...x})):(p&&p.sim&&p.def.fx?p.def.fx.map(x=>({...x})):[]),dadd:0,seen:!!(p&&p.scd)};
+const tg=p?p.tg:null,bv=p?{hr:R(tg.hr),s:SY(tg.map,tg.pp),d:DY(tg.map,tg.pp),spo2:R(tg.spo2),rr:R(tg.rr),t:+(+tg.t).toFixed(1),di:+(tg.di/p.kg).toFixed(1),evn:R(tg.evn)}:{},
+N=(id,l,v,x='')=>`<label id="l${id}">${l}<input id="${id}" type="number" step="any" value="${v??''}" ${x}></label>`,son=!!(p&&p.scd&&p.scd.on),sau=p&&p.scd?!!p.scd.auto:false;
+const d=$('#pf');
+d.innerHTML=`<div class="pfh"><h3>${p?`Lit ${p.b}, ${esc(p.ini)}<small>Modifier le patient ou le scénario</small>`:'Créer un patient fictif<small>Identité, état de base et, si besoin, scénario simulé</small>'}</h3><button class="sm" onclick="pfClose()" aria-label="Fermer">✕</button></div>
+<div class="tabs" role="tablist"><button role="tab" id="tp1" aria-selected="true" aria-controls="pg1" onclick="pfTab(1)">Patient</button><button role="tab" id="tp2" aria-selected="false" aria-controls="pg2" onclick="pfTab(2)">Simulation <span id="sbadge" class="pill">désactivée</span></button></div>
+<div id="pg1" role="tabpanel">
+${p?'':`<label>Modèle de départ<select id="f_mod" onchange="pfModel()">${MOD.map((m,j)=>`<option value="${j}">${esc(m.lab)}</option>`).join('')}</select></label><p class="hint">Le modèle préremplit le formulaire ; tout reste modifiable.</p>`}
+<fieldset><legend>Identité fictive</legend><div class="pfg">
+${N('f_b','Lit',p?p.b:freeBed(1),'min="1" max="99" step="1"')}
+<label>Nom ou initiales<input id="f_ini" type="text" maxlength="40" placeholder="ex. M. Durand" value="${p?esc(p.ini):''}"></label>
+<label>Sexe<select id="f_sx">${opt([['Homme','Homme'],['Femme','Femme']],p?p.sx:'Homme')}</select></label>
+${N('f_a','Âge (ans)',p?.a,'min="0" max="120"')}${N('f_kg','Poids (kg)',p?.kg,'min="1" max="300"')}
+<label class="wide2">Maladie, motif d’admission<input id="f_dx" type="text" list="dxl" maxlength="80" value="${p?esc(p.dx):''}"></label><datalist id="dxl">${[...new Set(B.map(b=>b[3]))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+</div></fieldset>
+<fieldset><legend>État de base</legend><p class="hint">${p?'Les constantes du patient évoluent progressivement vers ces valeurs (en dehors des événements du scénario).':'Valeurs de départ du patient ; les événements du scénario les feront varier.'}</p><div class="pfg">
+${N('f_hr','FC (bpm)',bv.hr)}${N('f_s','PAS (mmHg)',bv.s)}${N('f_d','PAD (mmHg)',bv.d)}${N('f_spo2','SpO₂ (%)',bv.spo2)}${N('f_rr','FR (/min)',bv.rr)}${N('f_t','Température (°C)',bv.t)}${N('f_di','Diurèse (mL/kg/h)',bv.di)}${N('f_evn','EVN (0 à 10)',bv.evn,'min="0" max="10" step="1"')}
+</div></fieldset>
+${p?(p.sim?'':'<p class="hint">Patient de démonstration : ces modifications ne sont pas conservées après rechargement de la page.</p>'):`<fieldset><legend>Support respiratoire initial</legend><div class="pfg"><label>Support<select id="f_vm" onchange="pfVent()">${opt(VMO,'air')}</select></label>${N('f_vfl','Débit (L/min)')}${N('f_vfi','FiO₂ (%)')}${N('f_vpe','PEP (cmH₂O)')}${N('f_vvt','Volume courant (mL)')}<label>Objectif de SpO₂<select id="f_vso">${opt([['>94 %','> 94 %'],['88–90 %','88–90 %']],'>94 %')}</select></label></div></fieldset>
+<fieldset id="f_rxs"><legend>Traitements du modèle</legend><label class="ck"><input id="f_rx" type="checkbox" checked> Démarrer les perfusions du modèle</label><p id="f_rxl" class="hint"></p></fieldset>`}
+</div>
+<div id="pg2" role="tabpanel" hidden>
+<div class="pfg"><label>Nom du scénario<input id="f_scn" type="text" maxlength="80" placeholder="ex. Choc septique, hypotension récidivante" value="${esc(p&&p.scd&&p.scd.nom||'')}"></label><label>Charger un scénario enregistré<select id="f_scl" onchange="scLoad()"></select></label></div><div class="rowb"><button class="pb2 alt" onclick="fpick()">Ouvrir un fichier de scénario</button><button class="pb2 alt" onclick="scSaveW()">Enregistrer ce scénario dans un fichier</button></div>
+<label class="ck big"><input id="f_son" type="checkbox"${son?' checked':''} onchange="pfBadge()"> Activer le scénario simulé pour ce patient</label>
+<label class="ck"><input id="f_sau" type="checkbox"${sau?' checked':''}> Démarrer automatiquement à la création du patient (sinon, bouton « Démarrer le scénario » dans la fiche)</label>
+<fieldset><legend>Événements programmés</legend><p class="hint">Le temps est compté depuis le démarrage du scénario. Le remplissage compte le volume réellement perfusé de Ringer lactate ou de NaCl 0,9 % (remplissage) prescrits après le début de l’événement : la correction commence après le délai choisi (2 min par défaut), atteint 50 % au temps choisi (3 min par défaut) et ne progresse que tant que le remplissage coule.</p>
+<div id="evl"></div><div class="rowb"><button class="pb2" onclick="evAdd()">Ajouter un événement</button><button class="pb2 alt" onclick="evAdd('hypo')">Exemple : hypotension, résolutive après remplissage, avec récidive</button><button class="pb2 alt" onclick="evAdd('desat')">Exemple : désaturation progressive</button></div></fieldset>
+<fieldset><legend>Effets des médicaments</legend><p class="hint">Choisissez un médicament du livret (ou un médicament personnalisé) et l’effet qu’il produit sur une constante quand les apprenants le prescrivent.</p>
+<div id="fxl"></div><div class="rowb"><button class="pb2" onclick="fxAdd()">Ajouter un effet médicamenteux</button></div></fieldset>
+<fieldset><legend>Nouveau médicament personnalisé</legend><div class="pfg">
+<label>Nom<input id="f_cn" type="text" maxlength="40" placeholder="ex. Médicament X"></label>
+<label>Mode d’administration<select id="f_cty" onchange="pfCty()">${opt([['c','Perfusion continue'],['i','Administration discontinue (bolus)']],'c')}</select></label>
+<label id="lf_cu">Unité<select id="f_cu" onchange="pfCty()">${opt([['mg/h','mg/h'],['µg/kg/min','µg/kg/min']],'mg/h')}</select></label>
+<label><span id="f_cdl">Dose habituelle (mg/h)</span><input id="f_cd" type="number" step="any" min="0"></label>
+<label><span id="f_cml">Dose maximale (mg/h)</span><input id="f_cm" type="number" step="any" min="0"></label>
+${N('f_cdu','Durée d’administration (min)',15,'min="5"')}
+</div><div class="rowb"><button class="pb2" onclick="pfDrug()">Ajouter au livret</button></div><p id="f_cmsg" role="status" class="pn2"></p></fieldset>
+</div>
+<ul id="pfe" aria-live="polite"></ul>
+<div class="pfa"><button class="pb2 alt" onclick="pfClose()">Annuler</button><button class="pb auto" onclick="pfSave()">${p?'Enregistrer les modifications':'Créer le patient'}</button></div>`;
+const hk=(cid,arr,tx)=>{$(cid).oninput=()=>{syncL(cid,arr);document.querySelectorAll(cid+' .evc').forEach(c=>c.querySelector('.hint').textContent=tx(arr[+c.dataset.j]))}};
+hk('#evl',W.ev,evTxt);hk('#fxl',W.fx,fxTxt);
+if(!p)pfModel();scOpts();evR();fxR();pfCty();pfBadge();pfTab(tab||1);
+try{d.showModal()}catch(e){d.setAttribute('open','')}}
+function pfClose(){const d=$('#pf');try{d.close()}catch(e){d.removeAttribute('open')}if(W&&W.dadd)render();W=null}
+function pfTab(n){[1,2].forEach(k=>{$('#tp'+k).setAttribute('aria-selected',k==n);$('#pg'+k).hidden=k!=n});if(n==2&&!W.seen){W.seen=true;$('#f_son').checked=true;pfBadge()}}
+function pfBadge(){const on=$('#f_son').checked,b=$('#sbadge');b.textContent=on?'activée':'désactivée';b.classList.toggle('on',on)}
+function pfModel(){const m=MOD[+$('#f_mod').value],s=(id,v)=>{const e=$('#'+id);if(e)e.value=v??''};
+s('f_dx',m.dx);s('f_a',m.a);s('f_kg',m.kg);s('f_sx',m.sx);Object.entries(m.base).forEach(([k,v])=>s('f_'+k,v));
+s('f_vm',m.vm);s('f_vfl',m.v.flow||'');s('f_vfi',m.v.fio2??'');s('f_vpe',m.v.peep??'');s('f_vvt',m.v.vt??'');s('f_vso',m.so);
+$('#f_rxs').hidden=!m.rx.length;$('#f_rxl').textContent=m.rx.map(([n,x])=>{const D=DR.find(d=>d.n==n);return `${n} ${f(x,2)} ${D?D.u:''}`}).join(', ');pfVent()}
+function pfVent(){const m=$('#f_vm').value,mech=['vni','vac','vsai','aprv'].includes(m),sh=(id,b)=>$('#l'+id).hidden=!b,df=(id,v)=>{if($('#'+id).value==='')$('#'+id).value=v};
+sh('f_vfl',m=='o2'||m=='hd');sh('f_vfi',m=='hd'||mech);sh('f_vpe',mech);sh('f_vvt',mech);
+if(m=='o2')df('f_vfl',3);if(m=='hd'){df('f_vfl',50);df('f_vfi',50)}if(mech){df('f_vfi',40);df('f_vpe',5);df('f_vvt',450)}}
+function pfCty(){const i=$('#f_cty').value=='i',u=i?'mg':$('#f_cu').value;$('#lf_cu').hidden=i;$('#lf_cdu').hidden=!i;$('#f_cdl').textContent=`Dose habituelle (${u}${i?' par administration':''})`;$('#f_cml').textContent=`Dose maximale (${u}${i?' par administration':''})`}
+function syncL(cid,arr){document.querySelectorAll(cid+' .evc').forEach(c=>{const o=arr[+c.dataset.j];c.querySelectorAll('[data-f]').forEach(i=>{o[i.dataset.f]=i.type=='checkbox'?i.checked:i.type=='number'?(i.value===''?'':+i.value):i.value})})}
+const drO=v=>DR.map(d=>`<option${d.n==v?' selected':''}>${esc(d.n)}</option>`).join('');
+function evR(){const c=$('#evl');if(!c)return;c.innerHTML=W.ev.length?W.ev.map((e,j)=>{const V=VR[e.k],num=(k,l,x='')=>`<label>${l}<input type="number" step="any" data-f="${k}" value="${e[k]??''}" ${x}></label>`;
+return `<div class="evc" data-j="${j}"><b>Événement ${j+1}</b><div class="evg">
+<label>Variable<select data-f="k" onchange="evCh(${j},'k')">${opt(Object.keys(VR).map(k=>[k,VR[k].l]),e.k)}</select></label>
+${num('at','Début après (min)','min="0"')}${num('z','Installation sur (min, 0 = brutale)','min="0"')}
+${e.k=='pa'?`<label>PAS / PAD cibles (mmHg)<span class="pa2"><input type="number" step="any" data-f="ps" value="${e.ps??''}" aria-label="PAS cible"><input type="number" step="any" data-f="pd" value="${e.pd??''}" aria-label="PAD cible"></span></label>`:num('v',`Valeur cible (${V.u})`)}
+<label>Résolution<select data-f="res" onchange="evCh(${j},'res')">${opt(Object.entries(RS),e.res)}</select></label>
+${e.res=='fill'?num('lg','Début de la correction après le début du remplissage (min)','min="0"')+num('h50','50 % de correction atteints à (min après le début du remplissage)','min="0"'):e.res=='auto'?num('rv','Résolution après (min)','min="0"'):e.res=='drug'?`<label>Médicament attendu<select data-f="rd">${drO(e.rd)}</select></label>`+num('lg','Délai d’action (min)','min="0"'):''}
+${e.res!='none'?(e.res=='fill'?'':num('r','Retour à l’état de base sur (min)','min="0"'))+num('n','Nombre de récidives','min="0" step="1"')+num('rt','Récidive après (min)','min="0"'):''}
+</div><p class="hint">${esc(evTxt(e))}</p><button class="sm" onclick="evDel(${j})">Retirer l’événement</button></div>`}).join(''):'<p class="hint">Aucun événement programmé.</p>'}
+function evCh(j,fk){syncL('#evl',W.ev);const e=W.ev[j];if(fk=='k'){if(e.k=='pa'){if(e.ps===''||e.ps==null){e.ps=80;e.pd=40}}else e.v=DV[e.k]}
+if(fk=='res'){if(e.res=='fill'||e.res=='drug')e.lg=2;if(e.res=='fill')e.h50=3;if(e.res=='auto')e.rv=10;if(e.res=='drug'&&!e.rd)e.rd=DR[0].n}evR();const x=document.querySelector(`#evl .evc[data-j="${j}"] [data-f="${fk}"]`);if(x)x.focus()}
+let EID=1;
+function evAdd(k){syncL('#evl',W.ev);const b={id:EID++,k:'pa',at:5,z:1,ps:80,pd:40,v:'',res:'fill',rv:500,lg:2,h50:3,rd:'',r:3,n:1,rt:10};
+W.ev.push(k=='desat'?{...b,k:'spo2',at:10,z:5,v:82,res:'none',rv:'',r:2,n:0,rt:0}:b);if(!$('#f_son').checked){$('#f_son').checked=true;pfBadge()}evR()}
+function evDel(j){syncL('#evl',W.ev);W.ev.splice(j,1);evR()}
+function fxR(){const c=$('#fxl');if(!c)return;c.innerHTML=W.fx.length?W.fx.map((x,j)=>{const V=VR[x.k],num=(k,l,a='')=>`<label>${l}<input type="number" step="any" data-f="${k}" value="${x[k]??''}" ${a}></label>`;
+return `<div class="evc" data-j="${j}"><b>Effet ${j+1}</b><div class="evg"><label>Médicament<select data-f="dn">${drO(x.dn)}</select></label>
+<label>Variable<select data-f="k" onchange="fxCh(${j})">${opt(Object.keys(VR).map(k=>[k,VR[k].l]),x.k)}</select></label>
+${num('dv',`Effet, + ou − (${x.k=='pa'?'mmHg de PAM':V.u})`)}${num('lag','Effet maximal en (min)','min="0"')}${num('dur','Durée (min, 0 = tant que administré)','min="0"')}
+<label class="ck"><input type="checkbox" data-f="pr"${x.pr?' checked':''}> Proportionnel à la dose</label></div><p class="hint">${esc(fxTxt(x))}</p><button class="sm" onclick="fxDel(${j})">Retirer l’effet</button></div>`}).join(''):'<p class="hint">Aucun effet programmé : les médicaments prescrits n’ont pas d’effet simulé sur les constantes.</p>'}
+function fxCh(j){syncL('#fxl',W.fx);fxR();const x=document.querySelector(`#fxl .evc[data-j="${j}"] [data-f="k"]`);if(x)x.focus()}
+function fxAdd(dn){syncL('#fxl',W.fx);W.fx.push({dn:dn||DR[0].n,k:'pa',dv:15,lag:2,dur:0,pr:true});if(!$('#f_son').checked){$('#f_son').checked=true;pfBadge()}fxR()}
+function fxDel(j){syncL('#fxl',W.fx);W.fx.splice(j,1);fxR()}
+function pfDrug(){const n=clean($('#f_cn').value),ty=$('#f_cty').value,u=ty=='i'?'mg':$('#f_cu').value,d=parseFloat($('#f_cd').value),mx=parseFloat($('#f_cm').value),du=parseFloat($('#f_cdu').value),m=$('#f_cmsg'),E=[];
+if(!n)E.push('Donnez un nom au médicament.');else if(DR.some(x=>x.n.toLowerCase()==n.toLowerCase()))E.push('Ce nom existe déjà dans le livret.');
+if(!(d>0))E.push('Indiquez une dose habituelle supérieure à 0.');if(!(mx>=d))E.push('La dose maximale doit être au moins égale à la dose habituelle.');if(ty=='i'&&!(du>=5&&du<=1440))E.push('Durée d’administration : 5 à 1 440 min.');
+if(E.length){m.className='pn2 lv2';m.textContent=E.join(' ');return}
+syncL('#evl',W.ev);addDrug({n,ty,u,d,mx,dur:du});W.dadd=1;fxAdd(n);evR();m.className='pn2';m.textContent=`${n} est ajouté au livret et prescriptible depuis « Prescrire un médicament ». Un effet a été ajouté ci-dessus : réglez-le.`;$('#f_cn').value=''}
+function pfSave(){const p=W.i==null?null:P[W.i],v=id=>parseFloat($('#'+id).value),E=[],rg=(x,a,b,l)=>{if(!(x>=a&&x<=b))E.push(`Patient : ${l} entre ${a} et ${b}.`)};
+syncL('#evl',W.ev);syncL('#fxl',W.fx);
+const ini=clean($('#f_ini').value),dx=clean($('#f_dx').value)||'Patient fictif',b=parseInt($('#f_b').value),base={hr:v('f_hr'),s:v('f_s'),d:v('f_d'),spo2:v('f_spo2'),rr:v('f_rr'),t:v('f_t'),di:v('f_di'),evn:v('f_evn')};
+if(!ini)E.push('Patient : indiquez un nom ou des initiales.');
+if(!(b>=1&&b<=99))E.push('Patient : numéro de lit entre 1 et 99.');else if(P.some(q=>q.b==b&&q!==p))E.push(`Patient : le lit ${b} est déjà occupé (lit libre suggéré : ${freeBed(b,p)}).`);
+rg(v('f_a'),0,120,'âge');rg(v('f_kg'),1,300,'poids (kg)');rg(base.hr,25,220,'FC');rg(base.s,40,250,'PAS');rg(base.d,15,150,'PAD');if(base.s<=base.d+5)E.push('Patient : la PAS doit dépasser la PAD.');rg(base.spo2,50,100,'SpO₂');rg(base.rr,4,60,'FR');rg(base.t,30,43,'température');rg(base.di,0,10,'diurèse (mL/kg/h)');rg(base.evn,0,10,'EVN');
+let vent=null,rx=[];
+if(!p){const m=$('#f_vm').value,fl=v('f_vfl'),fi=v('f_vfi'),pe=v('f_vpe'),vt=v('f_vvt'),so=$('#f_vso').value;
+if(m=='air')vent={m:'O2',flow:0};else if(m=='o2'){if(!(fl>0&&fl<=15))E.push('Patient : débit d’oxygène entre 0,5 et 15 L/min.');vent={m:'O2',flow:fl}}
+else if(m=='hd'){if(!(fl>=10&&fl<=70))E.push('Patient : débit Optiflow entre 10 et 70 L/min.');if(!(fi>=21&&fi<=100))E.push('Patient : FiO₂ entre 21 et 100 %.');vent={m:'Optiflow',flow:fl,fio2:fi}}
+else{if(!(fi>=21&&fi<=100))E.push('Patient : FiO₂ entre 21 et 100 %.');if(!(pe>=0&&pe<=25))E.push('Patient : PEP entre 0 et 25 cmH₂O.');if(!(vt>=200&&vt<=900))E.push('Patient : volume courant entre 200 et 900 mL.');
+vent={m:{vni:'BIPAP',vac:'VAC',vsai:'VSAI',aprv:'APRV'}[m],fio2:fi,peep:pe,vt};if(m=='vni')vent.ni=true;if(m=='vac')vent.pp=pe+12}
+vent.so=so;const md=MOD[+$('#f_mod').value];if($('#f_rx').checked)rx=md.rx}
+const son=$('#f_son').checked,sau=$('#f_sau').checked;
+if(son){if(!W.ev.length&&!W.fx.length)E.push('Simulation : ajoutez au moins un événement ou un effet médicamenteux, ou désactivez le scénario.');
+W.ev.forEach((e,j)=>{const L=`Simulation, événement ${j+1} :`,V=VR[e.k];if(!(+e.at>=0)||e.at==='')E.push(`${L} début (min) positif ou nul.`);if(!(+e.z>=0)||e.z==='')E.push(`${L} durée d’installation positive ou nulle.`);
+if(e.k=='pa'){if(!(e.ps>=30&&e.ps<=260&&e.pd>=10&&e.pd<=160&&e.ps>e.pd+5))E.push(`${L} PAS et PAD cibles plausibles (PAS supérieure à la PAD).`)}else if(!(e.v>=V.min&&e.v<=V.max)||e.v==='')E.push(`${L} valeur cible entre ${V.min} et ${V.max} ${V.u}.`);
+if(e.res=='auto'&&!(+e.rv>0))E.push(`${L} délai de résolution supérieur à 0.`);if(e.res=='fill'&&!(H50(e)>LG(e)))E.push(`${L} le temps pour 50 % de correction doit dépasser le délai de début de correction.`);
+if(e.res=='drug'&&!DR.some(d=>d.n==e.rd))E.push(`${L} choisissez le médicament attendu.`);if((e.res=='fill'||e.res=='drug')&&!(LG(e)>=0))E.push(`${L} délai avant correction positif ou nul.`);
+if(e.res!='none'){if(!(+e.r>=0))E.push(`${L} durée de retour positive ou nulle.`);if(!(Number.isInteger(+e.n)&&+e.n>=0))E.push(`${L} nombre de récidives entier, 0 ou plus.`);if(+e.n>0&&!(+e.rt>=0))E.push(`${L} délai de récidive positif ou nul.`)}else{e.n=0}
+if(!e.id)e.id=EID++});
+W.fx.forEach((x,j)=>{const L=`Simulation, effet ${j+1} :`;if(!DR.some(d=>d.n==x.dn))E.push(`${L} choisissez un médicament.`);if(!(+x.dv)||x.dv==='')E.push(`${L} indiquez un effet non nul (+ ou −).`);if(!(+x.lag>=0))E.push(`${L} délai d’action positif ou nul.`);if(!(+x.dur>=0))E.push(`${L} durée positive ou nulle.`)})}
+$('#pfe').innerHTML=E.map(m=>`<li><b class="lv2">À corriger</b> ${esc(m)}</li>`).join('');
+if(E.length){pfTab(E[0].startsWith('Simulation')?2:1);return}
+const sc={on:son,auto:sau,nom:clean($('#f_scn').value),ev:W.ev.map(e=>({...e}))},fx=W.fx.map(x=>({...x})),id={b,ini,sx:$('#f_sx').value,a:v('f_a'),kg:v('f_kg'),dx};
+let q;
+if(!p){q=newPat({...id,base,vent,rx,sc,fx});log(`Patient fictif créé : ${ini}, ${id.sx}, ${id.a} ans, ${dx}${son?', avec scénario':''}`,b)}
+else{q=p;const old=JSON.stringify(p.scd||null);Object.assign(p,id);const map=(base.s+2*base.d)/3;p.tg={...p.tg,hr:base.hr,map,pp:base.s-base.d,spo2:base.spo2,rr:base.rr,t:base.t,di:base.di*id.kg,evn:base.evn};
+if(old!==JSON.stringify(sc)){p.scd=sc;p.sc=mkSc(sc,sc.auto)}p.fx=son?fx:[];if(p.sim)p.def={...p.def,...id,base,sc,fx};log(`Patient modifié : ${ini}${son?', scénario mis à jour':''}`,b)}
+reidx();save();const dd=$('#pf');try{dd.close()}catch(e){dd.removeAttribute('open')}W=null;sel=q.i;op=null;ed=null;render();sum();window.scrollTo(0,0);savePat(q)}
+
+/* ---- fichiers patient / scénario ---- */
+const FMT='simulation-sante-reanimation';
+const EXSC=[{nom:'Hypotension à 80/40, résolutive après remplissage, avec récidive',ex:1,auto:false,ev:[{k:'pa',at:5,z:1,ps:80,pd:40,v:'',res:'fill',rv:500,lg:2,h50:3,rd:'',r:3,n:1,rt:10}],fx:[]},
+{nom:'Désaturation progressive à 82 %',ex:1,auto:false,ev:[{k:'spo2',at:10,z:5,v:82,res:'none',rv:'',lg:2,rd:'',r:2,n:0,rt:0}],fx:[]}];
+if(!ST.scs)ST.scs=[];
+let DL=null;(async()=>{try{DL=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){DL=null}})();
+let TT=0;function note(m){const t=$('#toast');if(!t)return;t.textContent=m;t.hidden=false;clearTimeout(TT);TT=setTimeout(()=>t.hidden=true,6000)}
+const fname=t=>String(t).replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'-').replace(/\s+/g,' ').trim().slice(0,120)+'.json';
+const usedDrugs=nm=>ST.drugs.filter(c=>nm.includes(c.n));
+const normEv=e=>({k:'pa',at:0,z:0,ps:'',pd:'',v:'',res:'none',rv:'',rd:'',lg:2,h50:3,r:0,n:0,rt:0,...e,id:EID++});
+function patDef(p){const tg=p.tg,v=vnow(p),sc=p.scd||{on:false,auto:false,ev:[]};
+return{b:p.b,ini:p.ini,sx:p.sx,a:p.a,kg:p.kg,dx:p.dx,base:{hr:R(tg.hr),s:SY(tg.map,tg.pp),d:DY(tg.map,tg.pp),spo2:R(tg.spo2),rr:R(tg.rr),t:+(+tg.t).toFixed(1),di:+(tg.di/p.kg).toFixed(2),evn:R(tg.evn)},
+vent:{...v},rx:p.rx.filter(r=>!r.it).map(r=>[DR[r.d].n,r.x]),sc:{...sc,ev:(sc.ev||[]).map(({st,ts,tr,tR,nx,left,cr,...e})=>e)},fx:(p.fx||[]).map(x=>({...x}))}}
+function patFile(p){const d=patDef(p),nm=[...d.rx.map(x=>x[0]),...d.sc.ev.map(e=>e.rd),...d.fx.map(x=>x.dn)];
+return{format:FMT,type:'patient',version:1,enregistre_le:new Date().toISOString(),nom:`${d.ini}, ${d.dx}`,patient:d,medicaments:usedDrugs(nm)}}
+function scObj(s){const ev=(s.ev||[]).map(({id,st,ts,tr,tR,nx,left,cr,...e})=>e),fx=(s.fx||[]).map(x=>({...x}));
+return{format:FMT,type:'scenario',version:1,enregistre_le:new Date().toISOString(),nom:s.nom,scenario:{auto:!!s.auto,evenements:ev,effets:fx},medicaments:usedDrugs([...ev.map(e=>e.rd),...fx.map(x=>x.dn)])}}
+async function fsave(obj,name){const data=JSON.stringify(obj,null,1),fn=fname(name);
+if(DL){try{await DL.save({filename:fn,data});note(`Fichier enregistré : ${fn}. Rangez-le dans le dossier « logiciel de simulation en santé » s’il n’y est pas.`);return}
+catch(e){const c=e&&e.code;if(c=='declined'){note('Enregistrement du fichier annulé.');return}if(c=='rate_limited'){note('Un enregistrement attend déjà votre confirmation.');return}}}
+const d=$('#xp');d.innerHTML=`<div class="pfh"><h3>Enregistrer le fichier<small>${esc(fn)}</small></h3><button class="sm" onclick="xpClose()" aria-label="Fermer">✕</button></div><p class="hint">L’enregistrement direct n’est pas disponible ici. Copiez ce contenu dans un fichier texte nommé « ${esc(fn)} », dans le dossier « logiciel de simulation en santé » de votre bureau.</p><textarea id="xpo" rows="12" readonly>${esc(data)}</textarea><div class="rowb"><button class="pb2" onclick="xpCopy()">Copier</button></div><p id="xpm" class="pn2" role="status"></p>`;
+try{d.showModal()}catch(x){d.setAttribute('open','')}}
+function savePat(p){fsave(patFile(p),`Patient - ${p.ini} - ${p.dx}`)}
+function scSaveW(){syncL('#evl',W.ev);syncL('#fxl',W.fx);const nom=clean($('#f_scn').value);
+if(!nom){note('Donnez un nom au scénario avant de l’enregistrer.');$('#f_scn').focus();return}
+if(!W.ev.length&&!W.fx.length){note('Le scénario est vide : ajoutez un événement ou un effet médicamenteux.');return}
+const s={nom,auto:$('#f_sau').checked,ev:W.ev,fx:W.fx};scLib(scObj(s));scOpts(nom);fsave(scObj(s),`Scénario - ${nom}`)}
+function scLib(o){const s={nom:o.nom,auto:o.scenario.auto,ev:o.scenario.evenements,fx:o.scenario.effets};ST.scs=ST.scs.filter(x=>x.nom!=s.nom);ST.scs.push(s);save()}
+function scOpts(v){const e=$('#f_scl');if(!e)return;const all=[...EXSC,...ST.scs];e.innerHTML='<option value="">Choisir…</option>'+all.map((s,j)=>`<option value="${j}"${s.nom==v?' selected':''}>${esc(s.nom)}${s.ex?' (exemple)':''}</option>`).join('')}
+function scApply(s){W.ev=(s.ev||[]).map(normEv);W.fx=(s.fx||[]).map(x=>({...x}));$('#f_scn').value=s.ex?'':s.nom;$('#f_sau').checked=!!s.auto;$('#f_son').checked=true;W.seen=true;pfBadge();
+const hk=(cid,arr,tx)=>{$(cid).oninput=()=>{syncL(cid,arr);document.querySelectorAll(cid+' .evc').forEach(c=>c.querySelector('.hint').textContent=tx(arr[+c.dataset.j]))}};hk('#evl',W.ev,evTxt);hk('#fxl',W.fx,fxTxt);evR();fxR()}
+function scLoad(){const j=$('#f_scl').value;if(j==='')return;const s=[...EXSC,...ST.scs][+j];scApply(s);note(`Scénario chargé : ${s.nom}. Ajustez-le puis enregistrez le patient.`)}
+function fpick(){$('#fop').click()}
+function fread(f){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>res(null);r.readAsText(f)})}
+function impDrugs(ds){let n=0;(ds||[]).forEach(c=>{if(c&&c.n&&+c.d>0&&+c.mx>0&&addDrug({...c,n:clean(c.n)}))n++});return n}
+const num0=(x,a,b)=>{x=+x;return x>=a&&x<=b};
+function okPat(d){const b=d&&d.base,v=d&&d.vent;return !!(d&&clean(d.ini)&&b&&v&&v.m&&num0(d.a,0,120)&&num0(d.kg,1,300)&&num0(b.hr,25,220)&&num0(b.s,40,250)&&num0(b.d,15,150)&&num0(b.spo2,50,100)&&num0(b.rr,4,60)&&num0(b.t,30,43)&&num0(b.di,0,10)&&num0(b.evn,0,10))}
+function impPat(d){const sc=d.sc&&Array.isArray(d.sc.ev)?{on:!!d.sc.on,auto:!!d.sc.auto,nom:clean(d.sc.nom),ev:d.sc.ev.map(normEv)}:null;
+const fx=Array.isArray(d.fx)?d.fx.filter(x=>x&&VR[x.k]&&DR.some(z=>z.n==x.dn)):[];
+const rx=Array.isArray(d.rx)?d.rx.filter(x=>Array.isArray(x)&&DR.some(z=>z.n==x[0]&&!z.it)&&+x[1]>0):[];
+return newPat({...d,ini:clean(d.ini),dx:clean(d.dx)||'Patient fictif',sx:d.sx=='Femme'?'Femme':'Homme',a:+d.a,kg:+d.kg,b:freeBed(parseInt(d.b)||1),rx,sc,fx})}
+async function fopen(fl){const files=[...fl||[]].filter(f=>/\.json$/i.test(f.name)||f.type=='application/json');if(!files.length){note('Choisissez des fichiers .json enregistrés par le logiciel.');return}
+let np=0,ns=0,nd=0,bad=[],last=null,lastSc=null;
+for(const f of files){const t=await fread(f);let o;try{o=JSON.parse(t)}catch(e){bad.push(f.name);continue}
+if(o&&o.type=='patient'&&o.patient){nd+=impDrugs(o.medicaments);if(okPat(o.patient)){last=impPat(o.patient);np++}else bad.push(f.name)}
+else if(o&&o.type=='scenario'&&o.scenario&&Array.isArray(o.scenario.evenements)){nd+=impDrugs(o.medicaments);const nom=clean(o.nom)||f.name.replace(/\.json$/i,'');scLib({...o,nom});lastSc=ST.scs[ST.scs.length-1];ns++}
+else if(o&&(Array.isArray(o)||Array.isArray(o.patients))){nd+=impDrugs(o.medicaments);(Array.isArray(o)?o:o.patients).forEach(d=>{if(okPat(d)){last=impPat(d);np++}})}
+else bad.push(f.name)}
+reidx();save();
+const part=[np?`${np} patient${np>1?'s':''}`:'',ns?`${ns} scénario${ns>1?'s':''}`:'',nd?`${nd} médicament${nd>1?'s':''} personnalisé${nd>1?'s':''}`:''].filter(Boolean);
+let m=part.length?`Ouvert : ${part.join(', ')}.`:'Aucun fichier reconnu.';if(ns&&!np)m+=' Les scénarios sont disponibles dans l’onglet Simulation du patient (« Charger un scénario enregistré »).';if(bad.length)m+=` Fichier${bad.length>1?'s':''} non reconnu${bad.length>1?'s':''} : ${bad.join(', ')}.`;note(m);
+if(W&&lastSc&&$('#pf').open){scOpts(lastSc.nom);scApply(lastSc);return}
+if(np==1&&last){sel=last.i;op=null;ed=null;render();window.scrollTo(0,0)}else if(np){sel=null;render()}sum()}
+let DC=0;document.addEventListener('dragenter',e=>{if([...(e.dataTransfer&&e.dataTransfer.types||[])].includes('Files')){DC++;document.body.classList.add('drag')}});
+document.addEventListener('dragleave',()=>{if(--DC<=0){DC=0;document.body.classList.remove('drag')}});
+document.addEventListener('dragover',e=>{if([...(e.dataTransfer&&e.dataTransfer.types||[])].includes('Files'))e.preventDefault()});
+document.addEventListener('drop',e=>{if(!e.dataTransfer||!e.dataTransfer.files.length)return;e.preventDefault();DC=0;document.body.classList.remove('drag');fopen(e.dataTransfer.files)});
+
+/* ---- export / import ---- */
+function xpOpen(){const d=$('#xp'),j=JSON.stringify({format:'simulation-reanimation',version:1,medicaments:ST.drugs,patients:P.filter(p=>p.sim).map(p=>p.def)},null,1);
+d.innerHTML=`<div class="pfh"><h3>Exporter ou importer des patients<small>Patients fictifs créés, scénarios et médicaments personnalisés</small></h3><button class="sm" onclick="xpClose()" aria-label="Fermer">✕</button></div>
+<label>Contenu à copier pour sauvegarder ou partager une séance<textarea id="xpo" rows="6" readonly>${esc(j)}</textarea></label><div class="rowb"><button class="pb2" onclick="xpCopy()">Copier</button></div>
+<label style="margin-top:12px">Coller ici un contenu exporté pour l’importer<textarea id="xpi" rows="6"></textarea></label><div class="rowb"><button class="pb2" onclick="xpImp()">Importer</button></div><p id="xpm" class="pn2" role="status"></p>`;
+try{d.showModal()}catch(e){d.setAttribute('open','')}}
+function xpClose(){const d=$('#xp');try{d.close()}catch(e){d.removeAttribute('open')}}
+function xpCopy(){const t=$('#xpo'),m=$('#xpm');const ok=()=>{m.textContent='Copié dans le presse-papiers.'},ko=()=>{t.focus();t.select();m.textContent='Texte sélectionné : copiez-le avec Ctrl+C (ou Cmd+C).'};try{navigator.clipboard.writeText(t.value).then(ok,ko)}catch(e){ko()}}
+function xpImp(){const m=$('#xpm');let x;try{x=JSON.parse($('#xpi').value)}catch(e){m.className='pn2 lv2';m.textContent='Contenu illisible : collez le texte exporté complet, sans modification.';return}
+const ds=Array.isArray(x)?[]:(x.medicaments||[]),ps=Array.isArray(x)?x:(x.patients||[]);let nd=0,np=0;
+ds.forEach(c=>{if(c&&c.n&&+c.d>0&&addDrug({...c,n:clean(c.n)}))nd++});
+ps.forEach(d=>{if(!d||!d.ini||!d.base||!d.vent)return;const dd={...d,ini:clean(d.ini),dx:clean(d.dx),b:freeBed(parseInt(d.b)||1)};newPat(dd);np++});
+reidx();save();m.className='pn2';m.textContent=`${np} patient${np>1?'s':''} et ${nd} médicament${nd>1?'s':''} importé${np+nd>1?'s':''}.`;if(sel===null)render();sum()}
+
+const NM={hr:85,spo2:96,map:78,rr:18,t:37};
+P.forEach(p=>{for(const k of ['hr','map','spo2','rr','t']){p.h[k]=Array.from({length:288},(_,n)=>{const w=Math.min(1,Math.max(0,(n/287-.55)/.4)),s=w*w*(3-2*w),v=NM[k]+(p.tg[k]-NM[k])*s+Math.sin(n/17+p.i+k.length)*NZ[k]*.8+(Math.random()-.5)*NZ[k]*1.5;return Math.min(LM[k][1],Math.max(LM[k][0],v))})}});
+P.forEach(p=>{const db=p.kg*({0:.5,2:.3,3:2}[p.i]||1),eb=p.i==2?6:p.i==10?5:p.rx.some(r=>DR[r.d].s)?.5:3;
+p.h.di=Array.from({length:288},(_,n)=>{const w=Math.min(1,Math.max(0,(n/287-.55)/.4));return R(db*(1-(p.i==2?.6:0)*w*w*(3-2*w))*(1+.15*Math.sin(n/23+p.i))+(Math.random()-.5)*6)});
+p.h.evn=Array.from({length:288},(_,n)=>Math.min(10,Math.max(0,R(eb+1.5*Math.sin(n/31+p.i)+(Math.random()-.5)))))});
+P.forEach(p=>{p.pp=45;p.tg.pp=45;p.h.pp=Array(288).fill(45);p.di=p.h.di[287];p.evn=p.h.evn[287];p.tg.di=p.di;p.tg.evn=p.evn;p.fx=[];p.sc=null;p.scd=null});
+ST.drugs.forEach(c=>addDrug(c,1));if(!ST.demo)P.length=0;ST.pts.forEach(d=>{try{newPat({...d,b:freeBed(+d.b)})}catch(e){}});reidx();
+for(let n=0;n<90;n++)step();
+render();sum();setInterval(tick,1000);requestAnimationFrame(wloop);
+/* ===== Version GitHub Pages : liaison formateur / apprenants par Firebase (REST) ===== */
+(function(){
+const MODE=window.SIM_MODE;if(!MODE)return;
+const FB=String(window.SIM_FIREBASE||'').replace(/\/+$/,'');
+const EDK=['rx','hx','nm','nx','vl','ov','cs','iv','ack','nid'],VK=['hr','map','spo2','rr','t','pp','di','evn'];
+const Q=new URLSearchParams(location.search),LOCK=parseInt(Q.get('lit'))||null;
+const SS={get:k=>{try{return sessionStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch(e){}}};
+document.body.classList.add('srv-'+MODE);
+const hd=document.querySelector('header>div');if(hd)hd.insertAdjacentHTML('beforeend','<div id="srvi" class="srvi"></div><p id="conn" class="conn" hidden></p>');
+const conn=(ok,m)=>{const c=$('#conn');if(c){c.hidden=ok;c.textContent=m||''}};
+const dlg=()=>$('#pf').open||$('#xp').open||$('#cx').open;
+if(!/^(https:\/\/[a-z0-9.-]+\.(firebaseio\.com|firebasedatabase\.app)|http:\/\/localhost:\d+)$/i.test(FB)){conn(false,'Liaison non configurée : renseignez l’adresse de la base Firebase dans le fichier config.js du site.');return}
+const home=location.pathname.replace(/[^/]*$/,'');
+async function rq(path,method,body){const r=await fetch(`${FB}/${path}.json`,{method:method||'GET',headers:body!==undefined?{'Content-Type':'application/json'}:{},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
+if(!r.ok){const e=new Error('Firebase '+r.status);e.status=r.status;throw e}return r.json()}
+const ALPH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',mkCode=()=>Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>ALPH[b%ALPH.length]).join('');
+
+/* ============ FORMATEUR ============ */
+if(MODE=='formateur'){
+let CODE=SS.get('sim.code'),NAP=0;
+const lurl=()=>`${location.origin}${home}apprenant.html?code=${CODE}`;
+function info(){const e=$('#srvi');if(!e)return;e.innerHTML=CODE?`<span class="code">Code de la séance <b>${CODE}</b></span><span>Apprenants : <code>${esc(location.host+home)}</code> puis ce code, ou <code>${esc(lurl())}</code> <button class="sm" onclick="cpL()">Copier le lien</button></span><span class="mu">${NAP} écran${NAP>1?'s':''} apprenant${NAP>1?'s':''} connecté${NAP>1?'s':''}</span><button class="sm" onclick="newS()">Nouvelle séance</button>`:'<span class="mu">Ouverture de la séance…</span>'}
+window.cpL=()=>{const t=lurl();try{navigator.clipboard.writeText(t).then(()=>note('Lien copié.'),()=>note(t))}catch(e){note(t)}};
+async function open0(){for(;;){try{let c;for(let i=0;i<5;i++){c=mkCode();if((await rq(`seances/${c}/m`))==null)break}
+await rq(`seances/${c}`,'PUT',{m:{t:Date.now(),v:1}});CODE=c;SS.set('sim.code',c);reset();info();return}
+catch(e){conn(false,e.status==401||e.status==403?'La base Firebase refuse l’accès : vérifiez ses règles (fichier firebase-regles.json).':'Connexion internet perdue : nouvelle tentative dans 5 s.');await new Promise(r=>setTimeout(r,5000))}}}
+window.newS=()=>{const o=CODE;CODE=null;info();if(o)rq(`seances/${o}`,'DELETE').catch(()=>{});open0()};
+/* état -> base, en un seul envoi par seconde */
+let lastP={},rev={},lastD='',lastHS=-1,lastBeds='',hsN=0,busy=false;
+function reset(){lastP={};rev={};lastD='';lastHS=-1;lastBeds=''}
+const rnd=a=>Array.isArray(a)?a.map(v=>typeof v=='number'?Math.round(v*10)/10:v):a;
+const ps=p=>{const o={};for(const k in p){if(['w','sig','def','h','sc','scd','fx'].includes(k)||VK.includes(k))continue;o[k]=p[k]}return JSON.stringify(o)};
+async function push(){if(busy||!CODE)return;busy=true;const up={},beds={},bl=P.map(p=>p.b).join(','),hsCh=HS!=lastHS||bl!=lastBeds;
+P.forEach(p=>{const s=ps(p);if(s!==lastP[p.b]){up['p/'+p.b]=s;rev[p.b]=(rev[p.b]||0)+1;lastP[p.b]=s}
+if(hsCh){const h={};VK.forEach(k=>{if(p.h[k])h[k]=rnd(p.h[k])});up['h/'+p.b]=JSON.stringify(h)}
+const v={r:rev[p.b]};VK.forEach(k=>{if(p[k]!=null)v[k]=Math.round(p[k]*100)/100});beds[p.b]=v});
+if(hsCh)hsN++;
+const d=JSON.stringify(ST.drugs);if(d!==lastD){up.d=d;lastD=d}
+up.v={t:Date.now(),hs:hsN,d:d.length,beds};up['m/t']=Date.now();
+try{await rq(`seances/${CODE}`,'PATCH',up);if(hsCh){lastHS=HS;lastBeds=bl}conn(true)}
+catch(e){Object.keys(up).forEach(k=>{if(k.startsWith('p/'))delete lastP[k.slice(2)]});if(up.d)lastD='';conn(false,'Connexion internet perdue : les écrans apprenants ne sont plus mis à jour. Nouvelle tentative en cours…')}busy=false}
+async function pull(){if(!CODE)return;try{const x=await rq(`seances/${CODE}/x`);if(!x)return;const ks=Object.keys(x).sort(),del={};ks.forEach(k=>{del[k]=null;try{applyPatch(JSON.parse(x[k]))}catch(e){}});await rq(`seances/${CODE}/x`,'PATCH',del)}catch(e){}}
+async function count(){if(!CODE)return;try{const a=await rq(`seances/${CODE}/a`)||{},n=Object.values(a).filter(t=>Date.now()-t<15e3).length;if(n!==NAP){NAP=n;info()}}catch(e){}}
+function applyPatch(d){const p=P.find(x=>x.b==d.b);if(!p||!d.keys)return;EDK.forEach(k=>{if(k in d.keys)p[k]=d.keys[k]});(d.logs||[]).forEach(l=>L.unshift({t:l.t,iso:l.iso,by:clean(d.by)||'Apprenant',m:clean(l.m),b:d.b}));
+if(sel===p.i){vit(p);if(!cedit)svt(p);if(!ed&&!op)rxl(p);alp(p,true)}else if(sel===null)gu();sum()}
+setInterval(push,1000);setInterval(pull,1000);setInterval(count,5000);
+if(!CODE)open0();info();
+
+/* ---- dossier local (Edge ou Chrome) ---- */
+const FSA=!!window.showDirectoryPicker;let DIR=null,LIB=[];
+const idb=(op,v)=>new Promise(ok=>{try{const r=indexedDB.open('simrea',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>{try{const tx=r.result.transaction('kv',op?'readwrite':'readonly'),st=tx.objectStore('kv'),q=op?st.put(v,'dir'):st.get('dir');q.onsuccess=()=>ok(q.result);q.onerror=()=>ok(null)}catch(e){ok(null)}};r.onerror=()=>ok(null)}catch(e){ok(null)}});
+const perm=async(ask)=>{if(!DIR)return false;try{const o={mode:'readwrite'};if(await DIR.queryPermission(o)=='granted')return true;return ask?(await DIR.requestPermission(o))=='granted':false}catch(e){return false}};
+idb(0).then(h=>{if(h){DIR=h;if(sel===null)libLoad()}});
+window.pickDir=async()=>{try{DIR=await showDirectoryPicker({id:'simrea',mode:'readwrite',startIn:'desktop'});await idb(1,DIR);note(`Dossier choisi : ${DIR.name}. Les patients et scénarios y seront enregistrés.`);libLoad()}catch(e){if(e&&e.name!='AbortError')note('Impossible d’utiliser ce dossier.')}};
+window.reDir=async()=>{if(await perm(true))libLoad()};
+fsave=async function(obj,name){const fn=fname(name),data=JSON.stringify(obj,null,1);
+if(DIR&&await perm(true)){try{const fh=await DIR.getFileHandle(fn,{create:true}),w=await fh.createWritable();await w.write(data);await w.close();note(`Enregistré dans « ${DIR.name} » : ${fn}`);libLoad();return}catch(e){}}
+if(FSA&&!DIR)note('Choisissez d’abord le dossier « logiciel de simulation en santé » (bouton « Choisir le dossier » sur l’écran de l’unité). Le fichier est téléchargé en attendant.');
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);if(!FSA)note(`Fichier téléchargé : ${fn}. Rangez-le dans le dossier « logiciel de simulation en santé ».`)};
+const u0=utb;utb=function(){return u0()+`<section class="pn lib"><div class="ph"><h3>Dossier des patients et scénarios</h3><span class="acts">${FSA?'<button class="sm" onclick="pickDir()">Choisir le dossier</button>':''}<button class="sm" onclick="libLoad()">Actualiser</button></span></div><p class="hint" id="libd"></p><div id="libl" class="libl"></div></section>`};
+window.libLoad=async function(){const l=$('#libl'),dd=$('#libd');if(!l)return;
+if(!FSA){dd.textContent='Ce navigateur ne permet pas d’écrire dans un dossier : les fichiers sont téléchargés. Pour enregistrer directement dans le dossier du bureau, utilisez Microsoft Edge ou Google Chrome.';l.innerHTML='<p class="mu">Ouvrez vos fichiers avec « Ouvrir un fichier » ou glissez-les sur la page.</p>';return}
+if(!DIR){dd.textContent='';l.innerHTML='<p>Choisissez une fois le dossier « logiciel de simulation en santé » de votre bureau : chaque patient et scénario y sera enregistré automatiquement, et la liste s’affichera ici.</p>';return}
+dd.textContent=`Dossier : ${DIR.name}`;if(!await perm(false)){l.innerHTML='<p>Le navigateur demande de confirmer l’accès au dossier. <button class="sm" onclick="reDir()">Autoriser l’accès</button></p>';return}
+const fl=[];try{for await(const [n,h] of DIR.entries()){if(h.kind!='file'||!/\.json$/i.test(n))continue;const f=await h.getFile();let type='autre',nom='';if(f.size<5e6){try{const o=JSON.parse(await f.text());if(o&&o.format==FMT){type=o.type;nom=o.nom||''}}catch(e){}}fl.push({name:n,type,nom,date:f.lastModified,h})}}catch(e){l.innerHTML='<p class="lv2">Lecture du dossier impossible.</p>';return}
+fl.sort((a,b)=>b.date-a.date);LIB=fl;
+fl.filter(x=>x.type=='scenario'&&!ST.scs.some(s=>s.nom==x.nom)).forEach(async x=>{try{const o=JSON.parse(await (await x.h.getFile()).text());impDrugs(o.medicaments);ST.scs.push({nom:clean(o.nom)||x.name,auto:o.scenario.auto,ev:o.scenario.evenements,fx:o.scenario.effets||[]})}catch(e){}});
+l.innerHTML=fl.length?`<table class="libt"><thead><tr><th>Type</th><th>Nom</th><th>Modifié le</th><th></th></tr></thead><tbody>${fl.map((x,j)=>`<tr><td><span class="ty ${x.type}">${x.type=='patient'?'Patient':x.type=='scenario'?'Scénario':'Autre'}</span></td><td>${esc(x.nom||x.name)}<small>${esc(x.name)}</small></td><td>${new Date(x.date).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</td><td>${x.type=='patient'?`<button class="sm" onclick="libOpen(${j})">Ajouter à l’unité</button>`:x.type=='scenario'?`<button class="sm" onclick="libOpen(${j})">Ajouter à la bibliothèque</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<p class="mu">Le dossier ne contient encore aucun patient ni scénario.</p>'};
+window.libOpen=async j=>{try{fopen([await LIB[j].h.getFile()])}catch(e){note('Ouverture du fichier impossible.')}};
+const r0=render;render=function(){r0();if(sel===null)libLoad()};
+if(sel===null){$('#app').innerHTML=utb()+grid();gu();libLoad()}
+}
+
+/* ============ APPRENANT ============ */
+if(MODE=='apprenant'){
+const CODE=String(Q.get('code')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+if(CODE.length!=6){location.replace(home);return}
+const ID=SS.get('sim.id')||Math.random().toString(36).slice(2,12);SS.set('sim.id',ID);
+USER=clean(Q.get('nom'))||'Apprenant';
+$('#srvi').innerHTML=`<b>Écran apprenant</b> · séance ${CODE}${LOCK?` · lit ${LOCK}`:''}`;
+document.body.classList.add('nofm');if(LOCK)document.body.classList.add('lock');
+step=function(){P.forEach(p=>VK.forEach(k=>{if(p.h&&p.h[k]&&p[k]!=null)p.h[k][287]=p[k]}))};
+save=function(){};
+utb=function(){return P.length?'':`<p class="mu wait">En attente du formateur pour la séance ${CODE}…</p>`};
+const b0=back;back=function(){if(!LOCK)b0()};
+const pend={},logs={},tm={};
+const lg0=log;log=function(m,b){lg0(m,b);if(b==null)return;pend[b]=Date.now()+5000;(logs[b]=logs[b]||[]).push({t:Date.now(),iso:new Date().toISOString(),m});clearTimeout(tm[b]);tm[b]=setTimeout(()=>send(b),150)};
+function send(b){const p=P.find(x=>x.b==b);if(!p)return;const keys={};EDK.forEach(k=>keys[k]=p[k]);const lg=logs[b]||[];logs[b]=[];pend[b]=Date.now()+5000;
+rq(`seances/${CODE}/x`,'POST',JSON.stringify({b,by:USER,keys,logs:lg})).catch(()=>note('Modification non transmise : connexion internet perdue.'))}
+P.length=0;sel=null;render();
+const sig=p=>JSON.stringify(EDK.map(k=>p[k]));
+function apply(d){(d.drugs||[]).forEach(c=>addDrug(c,1));const prev={};P.forEach(p=>prev[p.b]=p);const selB=sel!=null&&P[sel]?P[sel].b:null,oldBeds=P.map(p=>p.b).join(','),N=Date.now();let chg=false;
+const nx=d.pts.map(q=>{const o=prev[q.b];if(o){q.w=o.w;if(pend[q.b]>N||(q.b==selB&&(ed||op||cedit)))EDK.forEach(k=>q[k]=o[k]);else if(q.b==selB&&sig(o)!=sig(q))chg=true}return q});
+P.length=0;nx.forEach(p=>P.push(p));P.sort((a,b)=>a.b-b.b);P.forEach((p,i)=>p.i=i);
+const tb=LOCK||selB,ix=tb!=null?P.findIndex(p=>p.b==tb):-1;sel=ix>=0?ix:null;
+const beds=P.map(p=>p.b).join(',');
+if((beds!=oldBeds||(tb!=null&&selB==null&&sel!=null)||(selB!=null&&sel==null))&&!dlg()&&!op&&!ed&&!cedit){render();sum();return}
+if(sel!=null&&chg&&!ed&&!op)rxl(P[sel])}
+const PC={},HC={},RV={};let HSN=-1,DL=-1,DRUGS=[],busy=false,fails=0,lastT=0,seenT=Date.now();
+async function poll(){if(busy)return;busy=true;try{const v=await rq(`seances/${CODE}/v`);
+if(!v){const m=await rq(`seances/${CODE}/m`);conn(false,m?'En attente du formateur…':`Séance ${CODE} introuvable : vérifiez le code donné par le formateur.`);busy=false;return}
+const bs=Object.keys(v.beds||{}),need=[];
+if(v.d!==DL){DRUGS=JSON.parse(await rq(`seances/${CODE}/d`)||'[]');DL=v.d}
+for(const b of bs){if(RV[b]!==v.beds[b].r||!PC[b])need.push(rq(`seances/${CODE}/p/${b}`).then(s=>{if(s){PC[b]=s;RV[b]=v.beds[b].r}}));
+if(v.hs!==HSN||!HC[b])need.push(rq(`seances/${CODE}/h/${b}`).then(s=>{if(s)HC[b]=JSON.parse(s)}))}
+await Promise.all(need);HSN=v.hs;
+const pts=bs.filter(b=>PC[b]).map(b=>{const q=JSON.parse(PC[b]),bv=v.beds[b];VK.forEach(k=>{if(bv[k]!=null)q[k]=bv[k]});q.h={};VK.forEach(k=>{q.h[k]=(HC[b]&&HC[b][k]?HC[b][k].slice():Array(288).fill(q[k]??0));if(q[k]!=null)q.h[k][287]=q[k]});q.sc=null;q.fx=[];return q});
+apply({drugs:DRUGS,pts});fails=0;if(v.t!==lastT){lastT=v.t;seenT=Date.now()}conn(Date.now()-seenT<15e3,'Le formateur ne transmet plus : son écran est peut-être fermé ou hors connexion.')}
+catch(e){if(++fails>2)conn(false,'Connexion internet perdue : nouvelle tentative en cours…')}busy=false}
+setInterval(()=>rq(`seances/${CODE}/a/${ID}`,'PUT',Date.now()).catch(()=>{}),5000);
+poll();setInterval(poll,1000);
+}
+})();
+
+</script>
+</body></html>
